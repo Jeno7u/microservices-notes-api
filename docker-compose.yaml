@@ -1,0 +1,18 @@
+services:
+  gateway:
+    build: ./gateway
+    ports: 
+      - "8000:8000"
+    depends_on:
+      - auth
+      - user
+
+  auth:
+    build: ./auth
+    ports:
+      - "8001:8001"
+
+  user:
+    build: ./user
+    ports:
+      - "8002:8002"
