@@ -22,5 +22,5 @@ class User(Base):
     notes = relationship("Note", back_populates="related_user")
 
     def __repr__(self) -> str:
-        return f"User(id={self.id!r}, name=\"{self.surname} {self.name} {self.second_name}\", email={self.email!r}, is_admin={self.is_teacher!r})"
+        return f"User(id={self.id!r}, name=\"{self.surname} {self.name} {self.second_name}\", email={self.email!r}, is_admin={self.is_admin!r})"
 
