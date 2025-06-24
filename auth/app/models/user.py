@@ -2,7 +2,7 @@ import uuid
 from typing import List
 from sqlalchemy import String, Boolean
 from sqlalchemy.dialects.postgresql import UUID 
-from sqlalchemy.orm import declarative_base, Mapped, mapped_column
+from sqlalchemy.orm import declarative_base, Mapped, mapped_column, relationship
 
 
 Base = declarative_base()
@@ -18,6 +18,8 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(70))
     password: Mapped[str] = mapped_column(String(97))
     is_admin: Mapped[bool] = mapped_column(Boolean)
+
+    notes = relationship("Note", back_populates="related_user")
 
     def __repr__(self) -> str:
         return f"User(id={self.id!r}, name=\"{self.surname} {self.name} {self.second_name}\", email={self.email!r}, is_admin={self.is_teacher!r})"

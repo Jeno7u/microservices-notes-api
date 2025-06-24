@@ -1,10 +1,11 @@
 import uuid
 from typing import List
-from sqlalchemy import String, Boolean, Text
+from sqlalchemy import String, Boolean, Text, ForeignKey
 from sqlalchemy.dialects.postgresql import UUID 
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
+from app.models import User
 
 
 class Note(Base):
@@ -13,16 +14,9 @@ class Note(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     text: Mapped[str] = mapped_column(Text)
 
-    user_id = mapped_column(UUID(as_uuid=True), default=uuid.uuid4, ForeignKey)
-
-    login: Mapped[str] = mapped_column(String(25))
-    name: Mapped[str] = mapped_column(String(50))
-    surname: Mapped[str] = mapped_column(String(70))
-    second_name: Mapped[str] = mapped_column(String(40), nullable=True)
-    email: Mapped[str] = mapped_column(String(70))
-    password: Mapped[str] = mapped_column(String(97))
-    is_admin: Mapped[bool] = mapped_column(Boolean)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"))
+    related_user: Mapped[User] = relationship("User", back_populates="posts")
 
     def __repr__(self) -> str:
-        return f"User(id={self.id!r}, name=\"{self.surname} {self.name} {self.second_name}\", email={self.email!r}, is_admin={self.is_teacher!r})"
+        return f"Note(id={self.id!r}, text={self.text[:20]!r}, user_id={self.user_id!r})"
 

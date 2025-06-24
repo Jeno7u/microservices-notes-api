@@ -19,8 +19,8 @@ class User(Base):
     password: Mapped[str] = mapped_column(String(97))
     is_admin: Mapped[bool] = mapped_column(Boolean)
 
-    notes = relationship("Note", back_populates="related_user")
+    notes: Mapped[List["Note"]] = relationship("Note", back_populates="related_user")
 
     def __repr__(self) -> str:
-        return f"User(id={self.id!r}, name=\"{self.surname} {self.name} {self.second_name}\", email={self.email!r}, is_admin={self.is_teacher!r})"
+        return f"User(id={self.id!r}, name=\"{self.surname} {self.name} {self.second_name}\", email={self.email!r}, is_admin={self.is_admin!r})"
 
