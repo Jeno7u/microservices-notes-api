@@ -31,8 +31,6 @@ services:
     container_name: gateway
     ports:
       - "8000:8000"
-    env_file:
-      - ./gateway/.env
     depends_on:
       - auth
       # - user
