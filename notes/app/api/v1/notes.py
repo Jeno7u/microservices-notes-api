@@ -9,22 +9,14 @@ from app.schemas.auth import LoginRequest, RegisterRequest
 router = APIRouter()
 
 
-@router.post("/login/")
+
+
+@router.post("/create/")
 async def login(request_body: LoginRequest, session: AsyncSession = Depends(get_db)):
     print(request_body)
-    """
-    Проверяет налиие пользователя с такими данными и возвращает jwt-токен
-    """
-    response = await login_service(request_body, session)
-    
-    return response
+    return {}
 
 
-@router.post("/register/")
-async def register(request_body: RegisterRequest, session: AsyncSession = Depends(get_db)):
-    """
-    Проверяет валидность данных, создает пользователя и возвращает jwt-токен
-    """
-    response = await register_service(request_body, session)
-
-    return response
+# creating note
+# changing note
+# deleting note
