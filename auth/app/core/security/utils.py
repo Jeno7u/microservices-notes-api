@@ -5,7 +5,7 @@ import os
 import jwt
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from fastapi.security import HTTPAuthorizationCredentials
 from fastapi import Depends
 from passlib.context import CryptContext
 
@@ -22,7 +22,6 @@ ALGORITHM = os.getenv("ALGORITHM")
 
 
 pwd_context = CryptContext(schemes=["argon2"], deprecated="auto")
-security = HTTPBearer()
 
 
 def verify_password(plain_password, hashed_password) -> bool:
@@ -54,15 +53,13 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
     return encoded_jwt
 
 
-async def get_current_user(authorization: HTTPAuthorizationCredentials = Depends(security)) -> User:
-    token = authorization.credentials
+async def check_jwt(token: str) -> dict:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        login: str = payload.get("login")
+        email: str = payload.get("email")
         expire = datetime.fromtimestamp(int(payload.get("exp")))
-        if datetime.now() > expire or login is None:
+        if datetime.now() > expire or email is None:
             raise InvalidAuthorizationTokenError()
     except jwt.InvalidTokenError:
         raise InvalidAuthorizationTokenError()
-    user = await get_user_by_email(login)
-    return user
+    return {"code": "200", "email": email}

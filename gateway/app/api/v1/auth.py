@@ -7,15 +7,14 @@ router = APIRouter()
 async def register(request: Request):
     data = await request.json()
     async with httpx.AsyncClient() as client:
-        res = await client.post("http://auth:8001/auth/register/", json=data)
+        res = await client.post("http://auth:8000/auth/register/", json=data)
         return res.json()
 
 @router.post("/login/")
 async def login(request: Request):
     data = await request.json()
     async with httpx.AsyncClient() as client:
-        res = await client.post("http://auth:8001/auth/login/", json=data)
-        print(res)
+        res = await client.post("http://auth:8000/auth/login/", json=data)
         return res.json()
 
 

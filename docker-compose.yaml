@@ -4,7 +4,7 @@ services:
       context: ./auth
     container_name: auth
     ports:
-      - "8001:8001"
+      - "8001:8000"
     env_file:
       - ./auth/.env
     depends_on:
@@ -12,18 +12,16 @@ services:
     volumes:
       - ./auth:/app
 
-  # user:
-  #   build:
-  #     context: ./user
-  #   container_name: user
-  #   ports:
-  #     - "8002:8000"
-  #   env_file:
-  #     - ./user/.env
-  #   depends_on:
-  #     - db
-  #   volumes:
-  #     - ./user:/app
+  notes:
+    build:
+      context: ./notes
+    container_name: notes
+    ports:
+      - "8002:8000"
+    env_file:
+      - ./notes/.env
+    volumes:
+      - ./notes:/app
 
   gateway:
     build:
@@ -33,7 +31,7 @@ services:
       - "8000:8000"
     depends_on:
       - auth
-      # - user
+      - notes
     volumes:
       - ./gateway:/app
 

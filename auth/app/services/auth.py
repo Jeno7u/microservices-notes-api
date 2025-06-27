@@ -26,8 +26,8 @@ async def login_service(lr: LoginRequest, session: AsyncSession) -> TokenBase:
         user = await authenticate_user(lr.email, lr.password, session)
     except (IncorrectUserDataException, UnknownHashError):
         raise HTTPException(status_code=401, detail="Incorrect email or password")
-    login = lr.email
-    token = create_access_token({"login": login}, datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    email = lr.email
+    token = create_access_token({"email": email}, datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     return {"token": token}
 
 
@@ -57,7 +57,7 @@ async def register_service(rr: RegisterRequest, session: AsyncSession) -> TokenB
         session.add(new_user)
         await session.commit()
         await session.close()
-        token = create_access_token({"login": rr.email}, datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+        token = create_access_token({"email": rr.email}, datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
         return {"token": token}
     except Exception as e:
         session.rollback()
