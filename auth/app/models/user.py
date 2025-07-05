@@ -2,13 +2,14 @@ import uuid
 from typing import List
 from sqlalchemy import String, Boolean
 from sqlalchemy.dialects.postgresql import UUID 
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base
 
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = {"schema": "auth"}
     
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     login: Mapped[str] = mapped_column(String(25))
@@ -18,8 +19,6 @@ class User(Base):
     email: Mapped[str] = mapped_column(String(70))
     password: Mapped[str] = mapped_column(String(97))
     is_admin: Mapped[bool] = mapped_column(Boolean)
-
-    notes: Mapped[List["Note"]] = relationship("Note", back_populates="related_user")
 
     def __repr__(self) -> str:
         return f"User(id={self.id!r}, name=\"{self.surname} {self.name} {self.second_name}\", email={self.email!r}, is_admin={self.is_admin!r})"

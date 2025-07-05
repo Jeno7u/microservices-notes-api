@@ -1,12 +1,13 @@
 import os
 from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
+from sqlalchemy import engine_from_config, text
 from sqlalchemy import pool, MetaData
+
 
 from alembic import context
 
-from app.models import User, Note
+from app.models import Note
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -21,12 +22,7 @@ if config.config_file_name is not None:
 # for 'autogenerate' support
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
-combined_metadata = MetaData()
-for base in [User, Note]:
-    for table in base.metadata.tables.values():
-        table.tometadata(combined_metadata)
-
-target_metadata = combined_metadata
+target_metadata = Note.metadata
 
 # other values from the config, defined by the needs of env.py,
 # can be acquired:
@@ -55,6 +51,8 @@ def run_migrations_offline() -> None:
         target_metadata=target_metadata,
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
+        version_table=config.get_main_option("version_table"),
+        version_table_schema=config.get_main_option("version_table_schema")
     )
 
     with context.begin_transaction():
@@ -79,8 +77,15 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
+        # Create the notes schema if it doesn't exist
+        connection.execute(text("CREATE SCHEMA IF NOT EXISTS notes"))
+        connection.commit()
+        
         context.configure(
-            connection=connection, target_metadata=target_metadata
+            connection=connection, 
+            target_metadata=target_metadata,
+            version_table=config.get_main_option("version_table"),
+            version_table_schema=config.get_main_option("version_table_schema")
         )
 
         with context.begin_transaction():

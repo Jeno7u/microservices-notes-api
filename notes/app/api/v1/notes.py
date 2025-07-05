@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.db import get_db
 from app.services.notes import create_note_service
 from app.schemas.notes import CreateNoteRequest
-from app.core.utils import get_current_token
+from app.core.security.utils import get_current_token
 
 
 router = APIRouter()

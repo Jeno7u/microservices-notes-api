@@ -14,11 +14,6 @@ class DataBaseConnectionError(HTTPException):
                                                     detail=detail)
 
 
-class UserNotFoundException(HTTPException):
-    def __init__(self, detail="User with such credentials was nto found"):
-        super(UserNotFoundException, self).__init__(status_code=status.HTTP_404_NOT_FOUND,
-                                                    detail=detail)
-
 class InvalidAuthorizationTokenError(CredentialsException):
     def __init__(self):
         super(InvalidAuthorizationTokenError, self).__init__(
@@ -29,9 +24,3 @@ class IncorrectUserDataException(CredentialsException):
     def __init__(self):
         super(IncorrectUserDataException, self).__init__(
             detail="Incorrect user data")
-
-
-class AlreadyExistError(CredentialsException):
-    def __init__(self):
-        super(AlreadyExistError, self).__init__(
-            detail="Already exist")

@@ -1,6 +1,5 @@
 __all__ = (
-    "User", "Note",
+    "Note",
 )
 
-from .user import User
 from .note import Note

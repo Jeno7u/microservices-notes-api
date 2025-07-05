@@ -8,9 +8,10 @@ from sqlalchemy import select
 from passlib.exc import UnknownHashError
 
 from app.schemas.auth import LoginRequest, RegisterRequest, TokenBase
-from app.core.security.utils import authenticate_user, create_access_token, get_password_hash
-from app.core.security.errors import IncorrectUserDataException
+from app.core.security.utils import authenticate_user, create_access_token, get_password_hash, check_jwt
+from app.core.security.errors import IncorrectUserDataException, InvalidAuthorizationTokenError, UserNotFoundException
 from app.models import User
+from app.crud.user import get_user_by_email
 
 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
@@ -63,3 +64,31 @@ async def register_service(rr: RegisterRequest, session: AsyncSession) -> TokenB
         session.rollback()
         session.close()
         raise e
+
+
+async def validate_token_service(token: str, session: AsyncSession) -> dict:
+    """
+    Validate JWT token and return user information
+    """
+    try:
+        token_data = await check_jwt(token)
+        email = token_data.get("email")
+        
+        if not email:
+            raise InvalidAuthorizationTokenError()
+        
+        user = await get_user_by_email(email, session)
+        if not user:
+            raise UserNotFoundException(email)
+        
+        return {
+            "valid": True,
+            "user_id": str(user.id),
+            "email": user.email,
+            "is_admin": user.is_admin
+        }
+        
+    except (InvalidAuthorizationTokenError, UserNotFoundException) as e:
+        raise e
+    except Exception as e:
+        raise InvalidAuthorizationTokenError()

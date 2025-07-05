@@ -2,9 +2,8 @@ from fastapi import APIRouter, Depends, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
-from app.services.auth import login_service, register_service
-from app.schemas.auth import LoginRequest, RegisterRequest
-from app.core.security.utils import check_jwt
+from app.services.auth import login_service, register_service, validate_token_service
+from app.schemas.auth import LoginRequest, RegisterRequest, TokenBase
 
 
 router = APIRouter()
@@ -31,12 +30,11 @@ async def register(request_body: RegisterRequest, session: AsyncSession = Depend
 
 
 @router.post("/validate-token/")
-async def validate_token(request_body: dict):
+async def validate_token(request_body: TokenBase, session: AsyncSession = Depends(get_db)):
     """
-    Проверка валидности jwt-токена
+    Проверка валидности jwt-токена и получения данных пользователя
     """
-    token = request_body["token"]
-    response = await check_jwt(token)
+    response = await validate_token_service(request_body.token, session)
 
     return response
     

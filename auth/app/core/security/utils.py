@@ -62,4 +62,4 @@ async def check_jwt(token: str) -> dict:
             raise InvalidAuthorizationTokenError()
     except jwt.InvalidTokenError:
         raise InvalidAuthorizationTokenError()
-    return {"code": "200", "email": email}
+    return {"email": email}
