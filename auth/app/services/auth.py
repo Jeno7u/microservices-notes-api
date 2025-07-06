@@ -61,8 +61,8 @@ async def register_service(rr: RegisterRequest, session: AsyncSession) -> TokenB
         token = create_access_token({"email": rr.email}, datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
         return {"token": token}
     except Exception as e:
-        session.rollback()
-        session.close()
+        await session.rollback()
+        await session.close()
         raise e
 
 

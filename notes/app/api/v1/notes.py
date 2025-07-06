@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
-from app.services.notes import create_note_service
-from app.schemas.notes import CreateNoteRequest
+from app.services.notes import create_note_service, get_notes_service
+from app.schemas.notes import CreateNoteRequest, NotesListResponse
 from app.core.security.utils import get_current_token
 
 
@@ -23,6 +23,18 @@ async def create_note(
 
     return response
 
+
+@router.get("/")
+async def get_notes(
+    session: AsyncSession = Depends(get_db), 
+    token: str = Depends(get_current_token)
+    ):
+    """
+    Получения списка заметок пользователя
+    """
+    response = await get_notes_service(session, token)
+
+    return response
 
 # creating note
 # changing note
