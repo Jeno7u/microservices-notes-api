@@ -4,7 +4,7 @@ from typing import List, Optional
 
 
 class CreateNoteRequest(BaseModel):
-    name: str = None
+    name: str
     text: str = None
 
 

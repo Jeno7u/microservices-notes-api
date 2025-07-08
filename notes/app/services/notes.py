@@ -8,6 +8,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.notes import CreateNoteRequest
 from app.schemas.response import ResponseBase
 from app.core.security.utils import validate_token
+from app.core.security.errors import NoteWithSameNameAlreadyExistsError
+from app.crud.note import get_note_by_name
 from app.models import Note
 
 
@@ -22,15 +24,13 @@ async def create_note_service(
     # проверка валидности токена
     if "email" not in response_validation.keys():
         return response_validation
-    
-    # проверка наличия пользователя в базе
-    """
-    existing_user = await session.execute(select(User).where(User.email == email))
-    existing_user = existing_user.scalars().first()
 
-    if not existing_user:
-        return
-    """
+    # проверка наличии заметки с таким же названием
+    note_with_same_name = await get_note_by_name(session, response_validation["user_id"], request_body.name)
+
+    if note_with_same_name != None:
+        raise NoteWithSameNameAlreadyExistsError
+
     # надо будет сделать базоваое название для note
     new_note = Note(
         name=request_body.name,

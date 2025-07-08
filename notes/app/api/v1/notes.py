@@ -36,6 +36,11 @@ async def get_notes(
 
     return response
 
-# creating note
+
+@router.update("/update")
+async def update_note(
+    session: AsyncSession = Depends(get_db),
+    token: str = Depends(get_current_token)
+)
 # changing note
 # deleting note

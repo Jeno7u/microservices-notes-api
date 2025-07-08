@@ -14,6 +14,11 @@ class DataBaseConnectionError(HTTPException):
                                                     detail=detail)
 
 
+class NoteWithSameNameAlreadyExistsError(HTTPException):
+    def __init__(self, detail="Note with same name already exists"):
+        super(NoteWithSameNameAlreadyExistsError, self).__init__(status_code=status.HTTP_409_CONFLICT,
+                                                                 detail=detail)
+
 class InvalidAuthorizationTokenError(CredentialsException):
     def __init__(self):
         super(InvalidAuthorizationTokenError, self).__init__(
