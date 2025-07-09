@@ -2,30 +2,49 @@ from fastapi import HTTPException, status
 
 
 class CredentialsException(HTTPException):
-    def __init__(self, detail="Could not validate credentials"):
-        super(CredentialsException, self).__init__(status_code=status.HTTP_401_UNAUTHORIZED,
-                                                   detail=detail,
-                                                   headers={"WWW-Authenticate": "Bearer"})
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+            headers={"WWW-Authenticate": "Bearer"}
+        )
 
 
 class DataBaseConnectionError(HTTPException):
-    def __init__(self, detail="Database connection error"):
-        super(DataBaseConnectionError, self).__init__(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                                                    detail=detail)
+    def __init__(self):
+        super().__init__(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Database connection error"
+        )
 
 
-class NoteWithSameNameAlreadyExistsError(HTTPException):
-    def __init__(self, detail="Note with same name already exists"):
-        super(NoteWithSameNameAlreadyExistsError, self).__init__(status_code=status.HTTP_409_CONFLICT,
-                                                                 detail=detail)
+class NoteAlreadyExistsError(HTTPException):
+    def __init__(self, name: str):
+        detail = f"Note with name '{name}' already exists" 
+        super().__init__(
+            status_code=status.HTTP_409_CONFLICT, 
+            detail=detail
+        )
+
+
+class NoteNotFound(HTTPException):
+    def __init__(self, note_id: str):
+        detail = f"Note with ID '{note_id}' not found"
+        super().__init__(
+            status_code=status.HTTP_404_NOTE_FOUND,
+            detail=detail
+        )
+
 
 class InvalidAuthorizationTokenError(CredentialsException):
     def __init__(self):
-        super(InvalidAuthorizationTokenError, self).__init__(
-            detail="Invalid authorization token")
+        super().__init__(
+            detail="Invalid authorization token"
+        )
 
 
 class IncorrectUserDataException(CredentialsException):
     def __init__(self):
-        super(IncorrectUserDataException, self).__init__(
-            detail="Incorrect user data")
+        super().__init__(
+            detail="Incorrect user data"
+        )

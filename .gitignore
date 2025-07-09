@@ -2,3 +2,5 @@
 ./auth/.env
 ./gateway/.env
 ./notes/.env
+poetry.lock
+pyproject.toml
