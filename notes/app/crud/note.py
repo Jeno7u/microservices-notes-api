@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Note
@@ -25,6 +25,33 @@ async def get_note_by_id(session: AsyncSession, note_id: str) -> Note:
     )
     return note_by_id.scalars().first()
 
+async def generate_unique_name(
+        session: AsyncSession, 
+        user_id: str,
+        base_name: str
+        ) -> str:
+    """Создание стандартного названия для заметки"""
+    pattern = f"{base_name} %"
+    existing_notes = await session.execute(
+        select(Note.name).where(
+            Note.user_id == user_id, 
+            Note.name.like(pattern)
+        )
+    )
+    used_numbers = []
+    for name in existing_notes.scalars().all():
+        if name.startswith(f"{base_name} "):
+            suffix = name[len(f"{base_name} "):]
+            if suffix.isdigit():
+                used_numbers.append(int(suffix))
+    
+    counter = 1
+    while counter in used_numbers:
+        counter += 1
+
+    name = f"{base_name} {counter}"
+    return name
+
 
 async def create_note(
         session: AsyncSession, 
@@ -32,30 +59,12 @@ async def create_note(
         name: Optional[str] = None, 
         text: Optional[str] = None, 
         base_name: str = "New Note"
-) -> Note:
+        ) -> Note:
     """Создание заметки с возможностью оставить стандартное название"""
 
     # создание стандартного названия если не задано иначе
     if not name:
-        pattern = f"{base_name} %"
-        existing_notes = await session.execute(
-            select(Note.name).where(
-                Note.user_id == user_id, 
-                Note.name.like(pattern)
-            )
-        )
-        used_numbers = []
-        for name in existing_notes.sclalars().all():
-            if name.startswith(f"{base_name} "):
-                suffix = name[len(f"{base_name} "):]
-                if suffix.isdigit():
-                    used_numbers.append(int(suffix))
-        
-        counter = 1
-        while counter in used_numbers:
-            counter += 1
-
-        name = f"{base_name} {counter}"
+        name = await generate_unique_name(session, user_id, base_name)
 
     new_note = Note(
         name=name,
@@ -64,6 +73,16 @@ async def create_note(
     )
 
     session.add(new_note)
-    await session.commit()
-    await session.close()
     return new_note
+
+
+async def update_note_by_user(session: AsyncSession, note_id: str, name: str, text: str) -> None:
+    """Обновление значений заметки если таковы есть"""
+    update_values = {}
+    if name != None:
+        update_values["name"] = name
+    if text != None:
+        update_values["text"] = text
+    
+    if update_values:
+        await session.execute(update(Note).where(Note.id == note_id).values(**update_values))
