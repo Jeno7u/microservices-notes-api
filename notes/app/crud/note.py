@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models import Note
@@ -57,7 +57,6 @@ async def create_note(
         session: AsyncSession, 
         user_id: str,
         name: Optional[str] = None, 
-        text: Optional[str] = None, 
         base_name: str = "New Note"
         ) -> Note:
     """Создание заметки с возможностью оставить стандартное название"""
@@ -68,7 +67,7 @@ async def create_note(
 
     new_note = Note(
         name=name,
-        text=text,
+        text=None,
         user_id=user_id
     )
 
@@ -86,3 +85,12 @@ async def update_note_by_user(session: AsyncSession, note_id: str, name: str, te
     
     if update_values:
         await session.execute(update(Note).where(Note.id == note_id).values(**update_values))
+
+
+async def delete_note_by_id(note_id: str, session: AsyncSession) -> None:
+    """Удаление заметки по ID"""
+    await session.execute(
+        delete(Note).where(
+            Note.id == note_id
+        )
+    )

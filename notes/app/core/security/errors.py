@@ -2,10 +2,10 @@ from fastapi import HTTPException, status
 
 
 class CredentialsException(HTTPException):
-    def __init__(self):
+    def __init__(self, detail: str = "Could not validate credentials"):
         super().__init__(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
+            detail=detail,
             headers={"WWW-Authenticate": "Bearer"}
         )
 
@@ -31,7 +31,7 @@ class NoteNotFound(HTTPException):
     def __init__(self, note_id: str):
         detail = f"Note with ID '{note_id}' not found"
         super().__init__(
-            status_code=status.HTTP_404_NOTE_FOUND,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail=detail
         )
 

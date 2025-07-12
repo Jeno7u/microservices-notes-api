@@ -5,11 +5,11 @@ from pydantic import BaseModel
 
 
 class CreateNoteRequest(BaseModel):
-    name: str = None
+    name: Optional[str] = None
 
     model_config = {
         "json_schema_extra": {
-            "exmaple": {
+            "example": {
                 "name": "My Todo List",
             }
         }
@@ -47,6 +47,7 @@ class NoteResponse(BaseModel):
 class NoteTextResponse(BaseModel):
     id: uuid.UUID
     name: str
+    text: Optional[str]
 
     model_config = {
         "json_schema_extra": {

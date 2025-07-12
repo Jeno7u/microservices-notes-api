@@ -1,7 +1,5 @@
-import jwt
-import httpx
+from typing import Optional
 
-from fastapi import Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,38 +7,55 @@ from app.schemas.notes import CreateNoteRequest, UpdateNoteRequest
 from app.schemas.response import ResponseBase
 from app.core.security.utils import validate_token
 from app.core.security.errors import NoteAlreadyExistsError, NoteNotFound, UnauthorizedNoteAccessError
-from app.crud.note import get_note_by_user_and_name, get_note_by_id, create_note, update_note_by_user
+from app.crud.note import get_note_by_user_and_name, get_note_by_id, create_note, update_note_by_user, delete_note_by_id
 from app.models import Note
 
+
+async def check_note_with_same_name(session: AsyncSession, note_name: str, user_id: str) -> None:
+    """Проверка наличии заметки с таким же названием и принадлежащая пользователю"""
+    if note_name:
+        note_with_same_name = await get_note_by_user_and_name(session, user_id, note_name)
+
+        if note_with_same_name is not None:
+            raise NoteAlreadyExistsError(note_name)
+        
+
+async def check_note_existence(session: AsyncSession, note_id: str) -> Note:
+    """Проверка наличии заметки с ID == note_id"""
+    note = await get_note_by_id(session, note_id)
+    if not note:
+        raise NoteNotFound(note_id)
+    return note
+    
+
+async def check_note_belongs_to_user(note_user_id: str, token_user_id: str) -> None:
+    """Проверка принадлежности заметки пользователю"""
+    if note_user_id != token_user_id:
+        raise UnauthorizedNoteAccessError()
+    
+
+async def validate_note_access(session: AsyncSession, note_id: str, user_id: str) -> Note:
+    """Проверка наличии заметки с ID == note_id и проверкой принадлежности данной заметки пользователю"""
+    note = await check_note_existence(session, note_id)
+    await check_note_belongs_to_user(str(note.user_id), user_id)
+    return note
+    
 
 async def create_note_service(
         request_body: CreateNoteRequest, 
         session: AsyncSession, 
         token: str
     ) -> ResponseBase:
-    data = {"token": token}
-    response_validation = await validate_token(data)
+    response_validation = await validate_token(token)
 
-    # проверка валидности токена
-    if "email" not in response_validation.keys():
-        return response_validation
-
-    # проверка наличии заметки с таким же названием
-    if request_body.name:
-        note_with_same_name = await get_note_by_user_and_name(session, response_validation["user_id"], request_body.name)
-
-        if note_with_same_name != None:
-            raise NoteAlreadyExistsError(request_body.name)
+    await check_note_with_same_name(session, request_body.name, response_validation["user_id"])
 
     try:
-        new_note = await create_note(session, response_validation["user_id"], request_body.name, request_body.text)
+        new_note = await create_note(session, response_validation["user_id"], request_body.name)
         await session.commit()
         return {
-            "message": "Note created succesfully",
-            "note": {
                 "id": str(new_note.id),
                 "name": new_note.name
-            }
         }
     except Exception as e:
         await session.rollback()
@@ -51,7 +66,7 @@ async def create_note_service(
 
 async def get_notes_service(session: AsyncSession, token: str):
     try:
-        response_validation = await validate_token({"token": token})
+        response_validation = await validate_token(token)
 
         notes = await session.execute(select(Note).where(Note.user_id == response_validation["user_id"]))
         notes_list = []
@@ -62,6 +77,8 @@ async def get_notes_service(session: AsyncSession, token: str):
             })
 
         return {"notes": notes_list}
+    except Exception as e:
+        raise e
     finally:
         await session.close()
     
@@ -73,48 +90,28 @@ async def update_note_service(
         token: str
     ):
     try:
-        data = {"token": token}
-        response_validation = await validate_token(data)
+        response_validation = await validate_token(token)
 
-        # проверка валидности токена
-        if "email" not in response_validation.keys():
-            return response_validation
-
-        # проверка на наличие такой заметки для изменения
-        existing_note = await get_note_by_id(session, note_id)
-        if not existing_note:
-            raise NoteNotFound(note_id)
-        
-        # проверка на принадлежность заметки пользователю
-        if existing_note.user_id != response_validation["user_id"]:
-            raise UnauthorizedNoteAccessError()
+        note = await validate_note_access(session, note_id, response_validation["user_id"])
         
         # проверка на дубликат имени (если изменяется)
-        if request_body.name and request_body.name != existing_note.name:
-            note_with_same_name = await get_note_by_user_and_name(session, response_validation["user_id"], request_body.name)
-            if note_with_same_name:
-                raise NoteAlreadyExistsError(request_body.name)
+        if request_body.name and request_body.name != note.name:
+            await check_note_with_same_name(session, request_body.name, response_validation["user_id"])
         
         # нет изменений
-        if request_body.name == None and request_body.text == None:
+        if request_body.name is None and request_body.text is None:
             return {
-                "message": "No changes detected",
-                "note": {
-                    "id": note_id,
-                    "name": existing_note.name
-                }
+                "id": note_id,
+                "name": note.name
             }
         
-        name = existing_note.name if request_body.name == None else request_body.name
+        name = note.name if request_body.name is None else request_body.name
 
         await update_note_by_user(session, note_id, request_body.name, request_body.text)
         await session.commit()
         return {
-            "message": "Note updated succesfully",
-            "note": {
-                "id": note_id,
-                "name": name
-            }
+            "id": note_id,
+            "name": name
         }
     except Exception as e:
         await session.rollback()
@@ -126,30 +123,33 @@ async def update_note_service(
 
 async def get_note_service(note_id: str, session: AsyncSession, token: str):
     try:
-        data = {"token": token}
-        response_validation = await validate_token(data)
+        response_validation = await validate_token(token)
 
-        # проверка валидности токена
-        if "email" not in response_validation.keys():
-            return response_validation
-
-        # проверка на наличие заметки с ID == note_id
-        existing_note = await get_note_by_id(session, note_id)
-        if not existing_note:
-            raise NoteNotFound(note_id)
-        
-        # проверка на принадлежность заметки пользователю
-        if existing_note.user_id != response_validation["user_id"]:
-            raise UnauthorizedNoteAccessError()
+        note = await validate_note_access(session, note_id, response_validation["user_id"])
         
         return {
-            "message": "Note succesfully received",
-            "note": {
-                "id": note_id,
-                "name": existing_note.name,
-                "text": existing_note.text
-            }
+            "id": note_id,
+            "name": note.name,
+            "text": note.text
         }
+    except Exception as e:
+        raise e
     finally:
         await session.close()
 
+
+
+async def delete_note_service(note_id: str, session: AsyncSession, token: str):
+    try:
+        response_validation = await validate_token(token)
+
+        note = await validate_note_access(session, note_id, response_validation["user_id"])
+        
+        await delete_note_by_id(note_id, session)
+        await session.commit()
+    
+    except Exception as e:
+        await session.rollback()
+        raise e
+    finally:
+        await session.close()

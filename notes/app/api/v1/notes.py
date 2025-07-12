@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.db import get_db
-from app.services.notes import create_note_service, get_notes_service, update_note_service, get_note_service
+from app.services.notes import create_note_service, get_notes_service, update_note_service, get_note_service, delete_note_service
 from app.schemas.notes import CreateNoteRequest, NoteResponse, NotesListResponse, UpdateNoteRequest, NoteTextResponse
 from app.schemas.response import ErrorResponse
 from app.core.security.utils import get_current_token
@@ -50,11 +50,12 @@ async def get_notes(
     return response
 
 
-@router.put("/{note_id}",
+@router.put("/{note_id}/",
             status_code=status.HTTP_200_OK,
             response_model=NoteResponse,
             responses={
                 401: {"model": ErrorResponse, "description": "Invalid authorization token"},
+                403: {"model": ErrorResponse, "description": "No rights to acess this note"},
                 404: {"model": ErrorResponse, "description": "Note not found"},
                 409: {"model": ErrorResponse, "description": "Note with same name already exists"}
             })
@@ -72,23 +73,40 @@ async def update_note(
     return response
 
 
-@router.get("/{note_id}",
+@router.get("/{note_id}/",
             status_code=status.HTTP_200_OK,
             response_model=NoteTextResponse,
             responses={
                 401: {"model": ErrorResponse, "description": "Invalid authorization token"},
+                403: {"model": ErrorResponse, "description": "No rights to acess this note"},
                 404: {"model": ErrorResponse, "description": "Note not found"},
             })
 async def get_note(
-        note_id: str,
-        session: AsyncSession = Depends(get_db),
-        token: str = Depends(get_current_token)
-        ):
-        """
-        Получение данных заметки по ID заметки
-        """
-        response = await get_note_service(note_id, session, token)
+    note_id: str,
+    session: AsyncSession = Depends(get_db),
+    token: str = Depends(get_current_token)
+    ):
+    """
+    Получение данных заметки по ID заметки
+    """
+    response = await get_note_service(note_id, session, token)
 
-        return response
+    return response
 
-# deleting note
+
+@router.delete("/{note_id}/",
+               status_code=status.HTTP_204_NO_CONTENT,
+               responses={
+                401: {"model": ErrorResponse, "description": "Invalid authorization token"},
+                403: {"model": ErrorResponse, "description": "No rights to acess this note"},
+                404: {"model": ErrorResponse, "description": "Note not found"},
+                })
+async def delete_note(
+    note_id: str,
+    session: AsyncSession = Depends(get_db),
+    token: str = Depends(get_current_token)
+    ):
+    """
+    Удаление заметки по ID
+    """
+    await delete_note_service(note_id, session, token)
