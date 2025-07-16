@@ -1,5 +1,5 @@
 import httpx
-from fastapi import APIRouter, Request, status, Depends, HTTPException
+from fastapi import APIRouter, status, Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.schemas.notes import NoteResponse, CreateNoteRequest, NotesListResponse, UpdateNoteRequest, NoteTextResponse

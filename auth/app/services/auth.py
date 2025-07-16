@@ -1,15 +1,13 @@
 import os 
 import datetime
-from typing import Dict
 
 from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
-from passlib.exc import UnknownHashError
 
-from app.schemas.auth import LoginRequest, RegisterRequest, TokenBase
+from app.schemas.auth import LoginRequest, RegisterRequest, TokenBase, UserBase
 from app.core.security.utils import authenticate_user, create_access_token, get_password_hash, check_jwt
-from app.core.security.errors import IncorrectUserDataException, InvalidAuthorizationTokenError, UserNotFoundException
+from app.core.security.errors import InvalidAuthorizationTokenError, UserNotFoundException, IncorrectUserDataException, InternalServerError
 from app.models import User
 from app.crud.user import get_user_by_email
 
@@ -17,58 +15,69 @@ from app.crud.user import get_user_by_email
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 
 
-async def login_service(lr: LoginRequest, session: AsyncSession) -> TokenBase:
+async def login_service(request_body: LoginRequest, session: AsyncSession) -> TokenBase:
     """
     Функция, которая проверяет есть ли такой пользователь и если есть, то подтягивает из базы его данные
     :param lr: LoginRequest
+    :param session: Database session
     :return: token
     """
     try:
-        user = await authenticate_user(lr.email, lr.password, session)
-    except (IncorrectUserDataException, UnknownHashError):
-        raise HTTPException(status_code=401, detail="Incorrect email or password")
-    email = lr.email
-    token = create_access_token({"email": email}, datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-    return {"token": token}
+        await authenticate_user(request_body.email, request_body.password, session)
+        email = request_body.email
+        token = create_access_token({"email": email}, datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+        return TokenBase(token=token)
+    except IncorrectUserDataException:
+        raise
+    except Exception:
+        raise InternalServerError()
+    finally:
+        await session.close()
 
 
-async def register_service(rr: RegisterRequest, session: AsyncSession) -> TokenBase:
+async def register_service(request_body: RegisterRequest, session: AsyncSession) -> TokenBase:
     """
     Функция регистрации
-    :param rr: request body
+    :param request_body: RegisterRequest
+    :param session: Database session
     :return: token
     """
-    existing_user = await session.execute(select(User).where(User.email == rr.email))
+    existing_user = await session.execute(select(User).where(User.email == request_body.email))
     existing_user = existing_user.scalars().first()
 
     if existing_user:
-        raise HTTPException(status_code=400, detail="Пользователь с введенной почтой уже зарегистрирован!")
-    # if frontend woudnt validate data we should do it there
-    hashed_password = get_password_hash(rr.password)
+        raise HTTPException(status_code=409, detail="User with that email already exists")
+    
+    hashed_password = get_password_hash(request_body.password)
     new_user = User(
-        login=rr.login,
-        name=rr.name,
-        surname=rr.surname,
-        second_name=rr.second_name,
-        email=rr.email,
+        login=request_body.login,
+        name=request_body.name,
+        surname=request_body.surname,
+        second_name=request_body.second_name,
+        email=request_body.email,
         password=hashed_password,
         is_admin=False,
     )              
     try:
         session.add(new_user)
         await session.commit()
-        await session.close()
-        token = create_access_token({"email": rr.email}, datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
-        return {"token": token}
+        token = create_access_token({"email": request_body.email}, datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+        return TokenBase(token=token)
+    except HTTPException:
+        raise
     except Exception as e:
         await session.rollback()
+        raise InternalServerError()
+    finally:
         await session.close()
-        raise e
 
 
-async def validate_token_service(token: str, session: AsyncSession) -> dict:
+async def validate_token_service(token: str, session: AsyncSession) -> UserBase:
     """
-    Validate JWT token and return user information
+    Функция проверки jwt токена
+    :param token: token
+    :param session: Database session
+    :return: dict
     """
     try:
         token_data = await check_jwt(token)
@@ -81,11 +90,14 @@ async def validate_token_service(token: str, session: AsyncSession) -> dict:
         if not user:
             raise UserNotFoundException(email)
         
-        return {
-            "valid": True,
-            "user_id": str(user.id),
-            "email": user.email,
-            "is_admin": user.is_admin
-        }
-    except Exception as e:
-        raise e
+        return UserBase(
+            user_id = str(user.id),
+            email = user.email,
+            is_admin = user.is_admin
+        )
+    except (InvalidAuthorizationTokenError, UserNotFoundException):
+        raise
+    except Exception:
+        raise InternalServerError()
+    finally:
+        await session.close()

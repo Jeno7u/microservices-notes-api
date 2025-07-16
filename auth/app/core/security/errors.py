@@ -8,14 +8,14 @@ class CredentialsException(HTTPException):
                                                    headers={"WWW-Authenticate": "Bearer"})
 
 
-class DataBaseConnectionError(HTTPException):
-    def __init__(self, detail="Database connection error"):
+class InternalServerError(HTTPException):
+    def __init__(self, detail="Internal server error"):
         super(DataBaseConnectionError, self).__init__(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                                                     detail=detail)
 
 
 class UserNotFoundException(HTTPException):
-    def __init__(self, detail="User with such credentials was nto found"):
+    def __init__(self, detail="User with such credentials was not found"):
         super(UserNotFoundException, self).__init__(status_code=status.HTTP_404_NOT_FOUND,
                                                     detail=detail)
 
@@ -28,7 +28,7 @@ class InvalidAuthorizationTokenError(CredentialsException):
 class IncorrectUserDataException(CredentialsException):
     def __init__(self):
         super(IncorrectUserDataException, self).__init__(
-            detail="Incorrect user data")
+            detail="Incorrect email or password")
 
 
 class AlreadyExistError(CredentialsException):

@@ -30,7 +30,6 @@ def verify_password(plain_password, hashed_password) -> bool:
 
 def get_password_hash(password: str) -> str:
     hashed_password = pwd_context.hash(password)
-    print(hashed_password)
     return str(hashed_password)
 
 

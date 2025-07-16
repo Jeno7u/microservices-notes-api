@@ -17,3 +17,9 @@ class RegisterRequest(BaseModel):
 
 class TokenBase(BaseModel):
     token: str = None
+
+
+class UserBase(BaseModel):
+    user_id: str
+    email: str
+    is_admin: bool
