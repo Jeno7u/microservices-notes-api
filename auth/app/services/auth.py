@@ -87,8 +87,5 @@ async def validate_token_service(token: str, session: AsyncSession) -> dict:
             "email": user.email,
             "is_admin": user.is_admin
         }
-        
-    except (InvalidAuthorizationTokenError, UserNotFoundException) as e:
-        raise e
     except Exception as e:
-        raise InvalidAuthorizationTokenError()
+        raise e

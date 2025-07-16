@@ -1,16 +1,9 @@
 import httpx
 
 from fastapi import Depends
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 
 from app.core.security.errors import InvalidAuthorizationTokenError
 
-
-security = HTTPBearer()
-
-
-def get_current_token(authorization: HTTPAuthorizationCredentials = Depends(security)):
-    return authorization.credentials
 
 async def validate_token(token) -> dict:
     """
