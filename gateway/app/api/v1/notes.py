@@ -21,28 +21,32 @@ class ServiceClient:
         headers=None,
         expected_status=200
     ):
-        async with httpx.AsyncClient() as client:
-            response = await client.request(
-                method=method,
-                url=f"{self.base_url}{endpoint}",
-                json=json_data,
-                headers=headers
-            )
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.request(
+                    method=method,
+                    url=f"{self.base_url}{endpoint}",
+                    json=json_data,
+                    headers=headers
+                )
 
-            if response.status_code == 401:
-                raise HTTPException(status_code=401, detail="Invalid authorization token")
-            elif response.status_code == 403:
-                raise HTTPException(status_code=403, detail="No rights to access this note")
-            elif response.status_code == 404:
-                raise HTTPException(status_code=404, detail="Note not found")
-            elif response.status_code == 409:
-                raise HTTPException(status_code=409, detail="Note with same name already exists")
-            elif response.status_code == 422:
-                raise HTTPException(status_code=422, detail="Validation error")
-            elif response.status_code != expected_status:
-                raise HTTPException(status_code=500, detail="Service unavailable")
+                if response.status_code == expected_status:
+                    return response.json()
+                
+                try:
+                    error_data = response.json()
+                    detail = error_data.get("detail", "Service error")
+                except:
+                    detail = "Service error"
 
-            return response.json()
+                raise HTTPException(status_code=response.status_code, detail=detail)
+        
+        except HTTPException:
+            raise
+        except httpx.TimeoutException:
+            raise HTTPException(status_code=504, detail="Notes service timeout")
+        except Exception:
+            raise HTTPException(status_code=503, detail="Notes service unavailable")
             
 
 notes_client = ServiceClient("http://notes:8000")
@@ -55,13 +59,18 @@ notes_client = ServiceClient("http://notes:8000")
              responses={
                  401: {"model": ErrorResponse, "description": "Invalid authorization token"},
                  409: {"model": ErrorResponse, "description": "Note with same name already exists"},
-                 422: {"model": ErrorResponse, "description": "Validation error"}
+                 422: {"model": ErrorResponse, "description": "Validation error"},
+                 500: {"model": ErrorResponse, "description": "Internal server error"},
+                 503: {"model": ErrorResponse, "description": "Notes service unavailable"},
+                 504: {"model": ErrorResponse, "description": "Notes service timeout"}
             })
 async def create_note(
     request_body: CreateNoteRequest,
     credentials: HTTPAuthorizationCredentials = Depends(security)
     ):
-    """Создание заметки пользователя"""
+    """
+    Создание заметки пользователя
+    """
     headers = {"Authorization": f"Bearer {credentials.credentials}"}
     response = await notes_client.make_request(
         method="post",
@@ -79,11 +88,16 @@ async def create_note(
             response_model=NotesListResponse,
             responses={
                 401: {"model": ErrorResponse, "description": "Invalid authorization token"},
+                500: {"model": ErrorResponse, "description": "Internal server error"},
+                503: {"model": ErrorResponse, "description": "Notes service unavailable"},
+                504: {"model": ErrorResponse, "description": "Notes service timeout"}
             })
 async def get_notes(
     credentials: HTTPAuthorizationCredentials = Depends(security)
     ):
-    """Получения списка заметок пользователя"""
+    """
+    Получения списка заметок пользователя
+    """
     headers = {"Authorization": f"Bearer {credentials.credentials}"}
     response = await notes_client.make_request(
         method="get",
@@ -103,14 +117,19 @@ async def get_notes(
                 403: {"model": ErrorResponse, "description": "No rights to access this note"},
                 404: {"model": ErrorResponse, "description": "Note not found"},
                 409: {"model": ErrorResponse, "description": "Note with same name already exists"},
-                422: {"model": ErrorResponse, "description": "Validation error"}
+                422: {"model": ErrorResponse, "description": "Validation error"},
+                500: {"model": ErrorResponse, "description": "Internal server error"},
+                503: {"model": ErrorResponse, "description": "Notes service unavailable"},
+                504: {"model": ErrorResponse, "description": "Notes service timeout"}
             })
 async def update_note(
     note_id: str,
     request_body: UpdateNoteRequest,
     credentials: HTTPAuthorizationCredentials = Depends(security)
     ):
-    """Обновление данных заметки"""
+    """
+    Обновление данных заметки
+    """
     headers = {"Authorization": f"Bearer {credentials.credentials}"}
     response = await notes_client.make_request(
         method="put",
@@ -129,14 +148,19 @@ async def update_note(
             response_model=NoteTextResponse,
             responses={
                 401: {"model": ErrorResponse, "description": "Invalid authorization token"},
-                403: {"model": ErrorResponse, "description": "No rights to acess this note"},
+                403: {"model": ErrorResponse, "description": "No rights to access this note"},
                 404: {"model": ErrorResponse, "description": "Note not found"},
+                500: {"model": ErrorResponse, "description": "Internal server error"},
+                503: {"model": ErrorResponse, "description": "Notes service unavailable"},
+                504: {"model": ErrorResponse, "description": "Notes service timeout"}
             })
 async def get_note(
     note_id: str,
     credentials: HTTPAuthorizationCredentials = Depends(security)
     ):
-    """Получение данных заметки по ID заметки"""
+    """
+    Получение данных заметки по ID заметки
+    """
     headers = {"Authorization": f"Bearer {credentials.credentials}"}
     response = await notes_client.make_request(
         method="get",
@@ -152,14 +176,19 @@ async def get_note(
                status_code=status.HTTP_204_NO_CONTENT,
                responses={
                 401: {"model": ErrorResponse, "description": "Invalid authorization token"},
-                403: {"model": ErrorResponse, "description": "No rights to acess this note"},
+                403: {"model": ErrorResponse, "description": "No rights to access this note"},
                 404: {"model": ErrorResponse, "description": "Note not found"},
+                500: {"model": ErrorResponse, "description": "Internal server error"},
+                503: {"model": ErrorResponse, "description": "Notes service unavailable"},
+                504: {"model": ErrorResponse, "description": "Notes service timeout"}
                 })
 async def delete_note(
     note_id: str,
     credentials: HTTPAuthorizationCredentials = Depends(security)
     ):
-    """Удаление заметки по ID"""
+    """
+    Удаление заметки по ID
+    """
     headers = {"Authorization": f"Bearer {credentials.credentials}"}
     await notes_client.make_request(
         method="delete",

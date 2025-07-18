@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.schemas.notes import CreateNoteRequest, UpdateNoteRequest
 from app.schemas.response import ResponseBase
 from app.core.security.utils import validate_token
-from app.core.security.errors import NoteAlreadyExistsError, NoteNotFound, UnauthorizedNoteAccessError
+from app.core.security.errors import NoteAlreadyExistsError, NoteNotFound, UnauthorizedNoteAccessError, InternalServerError
 from app.crud.note import get_note_by_user_and_name, get_note_by_id, create_note, update_note_by_user, delete_note_by_id
 from app.models import Note
 
@@ -57,9 +57,9 @@ async def create_note_service(
                 "id": str(new_note.id),
                 "name": new_note.name
         }
-    except Exception as e:
+    except Exception:
         await session.rollback()
-        raise e
+        raise InternalServerError()
     finally:
         await session.close()
 
@@ -77,8 +77,8 @@ async def get_notes_service(session: AsyncSession, token: str):
             })
 
         return {"notes": notes_list}
-    except Exception as e:
-        raise e
+    except Exception:
+        raise InternalServerError()
     finally:
         await session.close()
     
@@ -113,9 +113,9 @@ async def update_note_service(
             "id": note_id,
             "name": name
         }
-    except Exception as e:
+    except Exception:
         await session.rollback()
-        raise e
+        raise InternalServerError()
     finally:
         await session.close()
 
@@ -132,8 +132,8 @@ async def get_note_service(note_id: str, session: AsyncSession, token: str):
             "name": note.name,
             "text": note.text
         }
-    except Exception as e:
-        raise e
+    except Exception:
+        raise InternalServerError()
     finally:
         await session.close()
 
@@ -148,8 +148,8 @@ async def delete_note_service(note_id: str, session: AsyncSession, token: str):
         await delete_note_by_id(note_id, session)
         await session.commit()
     
-    except Exception as e:
+    except Exception:
         await session.rollback()
-        raise e
+        raise InternalServerError()
     finally:
         await session.close()

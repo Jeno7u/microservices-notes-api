@@ -23,10 +23,12 @@ async def login_service(request_body: LoginRequest, session: AsyncSession) -> To
     :return: token
     """
     try:
-        await authenticate_user(request_body.email, request_body.password, session)
+        user = await authenticate_user(request_body.email, request_body.password, session)
+
         email = request_body.email
         token = create_access_token({"email": email}, datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
         return TokenBase(token=token)
+    
     except IncorrectUserDataException:
         raise
     except Exception:
@@ -42,27 +44,30 @@ async def register_service(request_body: RegisterRequest, session: AsyncSession)
     :param session: Database session
     :return: token
     """
-    existing_user = await session.execute(select(User).where(User.email == request_body.email))
-    existing_user = existing_user.scalars().first()
-
-    if existing_user:
-        raise HTTPException(status_code=409, detail="User with that email already exists")
-    
-    hashed_password = get_password_hash(request_body.password)
-    new_user = User(
-        login=request_body.login,
-        name=request_body.name,
-        surname=request_body.surname,
-        second_name=request_body.second_name,
-        email=request_body.email,
-        password=hashed_password,
-        is_admin=False,
-    )              
     try:
+        existing_user = await session.execute(select(User).where(User.email == request_body.email))
+        existing_user = existing_user.scalars().first()
+
+        if existing_user:
+            raise HTTPException(status_code=409, detail="User with that email already exists")
+        
+        hashed_password = get_password_hash(request_body.password)
+        new_user = User(
+            login=request_body.login,
+            name=request_body.name,
+            surname=request_body.surname,
+            second_name=request_body.second_name,
+            email=request_body.email,
+            password=hashed_password,
+            is_admin=False,
+        )              
+
         session.add(new_user)
         await session.commit()
+
         token = create_access_token({"email": request_body.email}, datetime.timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
         return TokenBase(token=token)
+    
     except HTTPException:
         raise
     except Exception as e:
@@ -77,7 +82,7 @@ async def validate_token_service(token: str, session: AsyncSession) -> UserBase:
     Функция проверки jwt токена
     :param token: token
     :param session: Database session
-    :return: dict
+    :return: UserBase
     """
     try:
         token_data = await check_jwt(token)
@@ -88,7 +93,7 @@ async def validate_token_service(token: str, session: AsyncSession) -> UserBase:
         
         user = await get_user_by_email(email, session)
         if not user:
-            raise UserNotFoundException(email)
+            raise UserNotFoundException()
         
         return UserBase(
             user_id = str(user.id),

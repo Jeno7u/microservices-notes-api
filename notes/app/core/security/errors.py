@@ -10,11 +10,11 @@ class CredentialsException(HTTPException):
         )
 
 
-class DataBaseConnectionError(HTTPException):
-    def __init__(self):
-        super().__init__(
+class InternalServerError(HTTPException):
+    def __init__(self, detail="Internal server error"):
+        super(InternalServerError, self).__init__(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Database connection error"
+            detail=detail
         )
 
 
@@ -56,6 +56,8 @@ class IncorrectUserDataException(CredentialsException):
         super().__init__(
             detail="Incorrect user data"
         )
+
+
 
 
 
