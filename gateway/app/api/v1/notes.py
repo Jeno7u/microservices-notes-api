@@ -31,6 +31,8 @@ class ServiceClient:
                 )
 
                 if response.status_code == expected_status:
+                    if response.status_code == 204:
+                        return
                     return response.json()
                 
                 try:
@@ -64,10 +66,7 @@ notes_client = ServiceClient("http://notes:8000")
                  503: {"model": ErrorResponse, "description": "Notes service unavailable"},
                  504: {"model": ErrorResponse, "description": "Notes service timeout"}
             })
-async def create_note(
-    request_body: CreateNoteRequest,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-    ):
+async def create_note(request_body: CreateNoteRequest, credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
     Создание заметки пользователя
     """
@@ -92,9 +91,7 @@ async def create_note(
                 503: {"model": ErrorResponse, "description": "Notes service unavailable"},
                 504: {"model": ErrorResponse, "description": "Notes service timeout"}
             })
-async def get_notes(
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-    ):
+async def get_notes(credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
     Получения списка заметок пользователя
     """
@@ -154,10 +151,7 @@ async def update_note(
                 503: {"model": ErrorResponse, "description": "Notes service unavailable"},
                 504: {"model": ErrorResponse, "description": "Notes service timeout"}
             })
-async def get_note(
-    note_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-    ):
+async def get_note(note_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
     Получение данных заметки по ID заметки
     """
@@ -182,10 +176,7 @@ async def get_note(
                 503: {"model": ErrorResponse, "description": "Notes service unavailable"},
                 504: {"model": ErrorResponse, "description": "Notes service timeout"}
                 })
-async def delete_note(
-    note_id: str,
-    credentials: HTTPAuthorizationCredentials = Depends(security)
-    ):
+async def delete_note(note_id: str, credentials: HTTPAuthorizationCredentials = Depends(security)):
     """
     Удаление заметки по ID
     """

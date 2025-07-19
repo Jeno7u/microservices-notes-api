@@ -3,8 +3,7 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas.notes import CreateNoteRequest, UpdateNoteRequest
-from app.schemas.response import ResponseBase
+from app.schemas.notes import CreateNoteRequest, UpdateNoteRequest, NoteResponse, NoteTextResponse, NotesListResponse
 from app.core.security.utils import validate_token
 from app.core.security.errors import NoteAlreadyExistsError, NoteNotFound, UnauthorizedNoteAccessError, InternalServerError
 from app.crud.note import get_note_by_user_and_name, get_note_by_id, create_note, update_note_by_user, delete_note_by_id
@@ -45,7 +44,7 @@ async def create_note_service(
         request_body: CreateNoteRequest, 
         session: AsyncSession, 
         token: str
-    ) -> ResponseBase:
+    ) -> NoteResponse:
     response_validation = await validate_token(token)
 
     await check_note_with_same_name(session, request_body.name, response_validation["user_id"])
@@ -57,18 +56,23 @@ async def create_note_service(
                 "id": str(new_note.id),
                 "name": new_note.name
         }
-    except Exception:
+    
+    except Exception as e:
         await session.rollback()
-        raise InternalServerError()
+        raise e
     finally:
         await session.close()
 
 
-async def get_notes_service(session: AsyncSession, token: str):
+async def get_notes_service(session: AsyncSession, token: str) -> NotesListResponse:
     try:
         response_validation = await validate_token(token)
 
-        notes = await session.execute(select(Note).where(Note.user_id == response_validation["user_id"]))
+        notes = await session.execute(
+            select(Note).where(
+                Note.user_id == response_validation["user_id"]
+                )
+            )
         notes_list = []
         for note in notes.scalars().all():
             notes_list.append({
@@ -77,8 +81,8 @@ async def get_notes_service(session: AsyncSession, token: str):
             })
 
         return {"notes": notes_list}
-    except Exception:
-        raise InternalServerError()
+    except Exception as e:
+        raise e
     finally:
         await session.close()
     
@@ -88,7 +92,7 @@ async def update_note_service(
         request_body: UpdateNoteRequest,
         session: AsyncSession,
         token: str
-    ):
+    ) -> NoteResponse:
     try:
         response_validation = await validate_token(token)
 
@@ -113,15 +117,15 @@ async def update_note_service(
             "id": note_id,
             "name": name
         }
-    except Exception:
+    except Exception as e:
         await session.rollback()
-        raise InternalServerError()
+        raise e
     finally:
         await session.close()
 
     
 
-async def get_note_service(note_id: str, session: AsyncSession, token: str):
+async def get_note_service(note_id: str, session: AsyncSession, token: str) -> NoteTextResponse:
     try:
         response_validation = await validate_token(token)
 
@@ -132,8 +136,8 @@ async def get_note_service(note_id: str, session: AsyncSession, token: str):
             "name": note.name,
             "text": note.text
         }
-    except Exception:
-        raise InternalServerError()
+    except Exception as e:
+        raise e
     finally:
         await session.close()
 
@@ -148,8 +152,8 @@ async def delete_note_service(note_id: str, session: AsyncSession, token: str):
         await delete_note_by_id(note_id, session)
         await session.commit()
     
-    except Exception:
+    except Exception as e:
         await session.rollback()
-        raise InternalServerError()
+        raise e
     finally:
         await session.close()

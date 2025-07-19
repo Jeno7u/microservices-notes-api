@@ -102,7 +102,8 @@ async def validate_token_service(token: str, session: AsyncSession) -> UserBase:
         )
     except (InvalidAuthorizationTokenError, UserNotFoundException):
         raise
-    except Exception:
+    except Exception as e:
+        print(e)
         raise InternalServerError()
     finally:
         await session.close()

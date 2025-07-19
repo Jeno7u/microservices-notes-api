@@ -56,7 +56,7 @@ async def check_jwt(token: str) -> dict:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
         email: str = payload.get("email")
-        expire = datetime.fromtimestamp(int(payload.get("exp"), tz=timezone.utc))
+        expire = datetime.fromtimestamp(int(payload.get("exp")), tz=timezone.utc)
         if datetime.now(timezone.utc) > expire or email is None:
             raise InvalidAuthorizationTokenError()
     except jwt.InvalidTokenError:
