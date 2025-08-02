@@ -4,3 +4,4 @@
 ./notes/.env
 poetry.lock
 pyproject.toml
+test.py
