@@ -16,12 +16,7 @@ ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 
 
 async def login_service(request_body: LoginRequest, session: AsyncSession) -> TokenBase:
-    """
-    Функция, которая проверяет есть ли такой пользователь и если есть, то подтягивает из базы его данные
-    :param lr: LoginRequest
-    :param session: Database session
-    :return: token
-    """
+    """Service function that authenticates user and returns jwt token"""
     try:
         user = await authenticate_user(request_body.email, request_body.password, session)
 
@@ -38,12 +33,7 @@ async def login_service(request_body: LoginRequest, session: AsyncSession) -> To
 
 
 async def register_service(request_body: RegisterRequest, session: AsyncSession) -> TokenBase:
-    """
-    Функция регистрации
-    :param request_body: RegisterRequest
-    :param session: Database session
-    :return: token
-    """
+    """Service function for registration"""
     try:
         existing_user = await session.execute(select(User).where(User.email == request_body.email))
         existing_user = existing_user.scalars().first()
@@ -78,12 +68,7 @@ async def register_service(request_body: RegisterRequest, session: AsyncSession)
 
 
 async def validate_token_service(token: str, session: AsyncSession) -> UserBase:
-    """
-    Функция проверки jwt токена
-    :param token: token
-    :param session: Database session
-    :return: UserBase
-    """
+    """Service function for token validation and returns basic user information"""
     try:
         token_data = await check_jwt(token)
         email = token_data.get("email")
