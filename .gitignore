@@ -1,7 +1,16 @@
+# env files
 .env
 ./auth/.env
 ./gateway/.env
 ./notes/.env
-poetry.lock
-pyproject.toml
-test.py
+
+# cache folder
+**/__pycache__
+**/pytest_cache
+
+# IDEs
+.vscode/
+.idea/
+
+# OS files
+.DS_Store

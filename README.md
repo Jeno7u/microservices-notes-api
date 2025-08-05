@@ -3,13 +3,13 @@ A simple microservice REST API for creating, storing and using notes.
 
 ---
 
-## Prerequisites
+## Requirements
 
 - **Docker** (official download page [https://docs.docker.com/get-started/get-docker/](https://docs.docker.com/get-started/get-docker/))
 
 ---
 
-## Verify Installation
+## Verify Installation of Requirements
 
 Check if Docker and Docker Compose are installed:
 ```bash
@@ -34,7 +34,7 @@ Docker Compose version v2.30.3-desktop.1
     ```
 
 2. **Create .env files**
-    Based on .env.template files create .env files in same directory and configure these variables
+    Based on .env.template files create .env files in same directory and configure these variables.
 
     Location of .env.template files in project:
 
