@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
 from .config import TEST_DB_URL
 from auth.app.models.base import Base as auth_base
+from auth.app.models import User
 from notes.app.models.base import Base as notes_base
 
 
@@ -62,11 +63,52 @@ async def notes_session(notes_engine):
 
 
 @pytest.fixture
-def test_user_data():
-    return {
-        "login": "testuser",
-        "name": "Test",
-        "surname": "User",
-        "email": "test@example.com",
-        "password": "testpassword123"
+def test_user_data1():
+    user_data =  {
+        "login": "testuser1",
+        "name": "Test1",
+        "surname": "User1",
+        "email": "test1@example.com",
+        "password": "test1password123",
+        "is_admin": False
     }
+    return user_data
+
+
+@pytest.fixture
+def test_user_data2():
+    user_data =  {
+        "login": "testuser2",
+        "name": "Test2",
+        "surname": "User2",
+        "email": "test2@example.com",
+        "password": "test2password123",
+        "is_admin": True
+    }
+    return user_data
+
+
+@pytest.fixture
+def test_user1(test_user_data1):
+    user = User(
+        login=test_user_data1["login"],
+        name=test_user_data1["name"],
+        surname=test_user_data1["surname"],
+        email=test_user_data1["email"],
+        password=test_user_data1["password"],
+        is_admin=test_user_data1["is_admin"]
+    )
+    return user
+
+
+@pytest.fixture
+def test_user2(test_user_data2):
+    user = User(
+        login=test_user_data2["login"],
+        name=test_user_data2["name"],
+        surname=test_user_data2["surname"],
+        email=test_user_data2["email"],
+        password=test_user_data2["password"],
+        is_admin=test_user_data2["is_admin"]
+    )
+    return user
