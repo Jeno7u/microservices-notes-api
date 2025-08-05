@@ -18,9 +18,7 @@ router = APIRouter()
                  500: {"model": ErrorResponse, "description": "Internal server error"}
             })
 async def login(request_body: LoginRequest, session: AsyncSession = Depends(get_db)):
-    """
-    Проверяет налиие пользователя с такими данными и возвращает jwt-токен
-    """
+    """Checks user existance and returns jwt token"""
     response = await login_service(request_body, session)
     
     return response
@@ -35,9 +33,7 @@ async def login(request_body: LoginRequest, session: AsyncSession = Depends(get_
                  500: {"model": ErrorResponse, "description": "Internal server error"}
             })
 async def register(request_body: RegisterRequest, session: AsyncSession = Depends(get_db)):
-    """
-    Проверяет валидность данных, создает пользователя и возвращает jwt-токен
-    """
+    """Validates input data, creates user based on that and returns jwt token"""
     response = await register_service(request_body, session)
 
     return response
@@ -53,9 +49,7 @@ async def register(request_body: RegisterRequest, session: AsyncSession = Depend
                  500: {"model": ErrorResponse, "description": "Internal server error"}
             })
 async def validate_token(request_body: TokenBase, session: AsyncSession = Depends(get_db)):
-    """
-    Проверка валидности jwt-токена и получения данных пользователя
-    """
+    """Validates jwt token and returns some user data"""
     response = await validate_token_service(request_body.token, session)
 
     return response
