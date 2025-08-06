@@ -9,9 +9,9 @@ from fastapi.security import HTTPAuthorizationCredentials
 from fastapi import Depends
 from passlib.context import CryptContext
 
-from app.models import User
-from app.crud.user import get_user_by_email
-from app.core.security.errors import (
+from auth.app.models import User
+from auth.app.crud.user import get_user_by_email
+from auth.app.core.security.errors import (
     IncorrectUserDataException,
     InvalidAuthorizationTokenError,
 )

@@ -5,11 +5,11 @@ from fastapi import HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
-from app.schemas.auth import LoginRequest, RegisterRequest, TokenBase, UserBase
-from app.core.security.utils import authenticate_user, create_access_token, get_password_hash, check_jwt
-from app.core.security.errors import InvalidAuthorizationTokenError, UserNotFoundException, IncorrectUserDataException, InternalServerError
-from app.models import User
-from app.crud.user import get_user_by_email
+from auth.app.schemas.auth import LoginRequest, RegisterRequest, TokenBase, UserBase
+from auth.app.core.security.utils import authenticate_user, create_access_token, get_password_hash, check_jwt
+from auth.app.core.security.errors import InvalidAuthorizationTokenError, UserNotFoundException, IncorrectUserDataException, InternalServerError
+from auth.app.models import User
+from auth.app.crud.user import get_user_by_email
 
 
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))

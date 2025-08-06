@@ -1,7 +1,8 @@
 services:
   auth:
     build:
-      context: ./auth
+      context: .
+      dockerfile: auth/Dockerfile
     container_name: auth
     ports:
       - "8001:8000"
