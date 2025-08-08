@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 
 class LoginRequest(BaseModel):
-    email: str
+    login: str
     password: str
 
     model_config = {

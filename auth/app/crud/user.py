@@ -5,10 +5,12 @@ from auth.app.models import User
 
 
 async def get_user_by_email(email: str, session: AsyncSession) -> User:
-    """
-    Фунция получения пользователя по email из таблицы users
-    :param email: email пользователя
-    :return: Объект пользователя
-    """
+    """Returns user by email"""
     user = await session.execute(select(User).where(User.email == email))
+    return user.scalars().first()
+
+
+async def get_user_by_login(login: str, session: AsyncSession) -> User:
+    """Returns user by login"""
+    user = await session.execute(select(User).where(User.login == login))
     return user.scalars().first()
