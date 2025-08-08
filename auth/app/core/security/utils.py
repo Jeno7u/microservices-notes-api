@@ -1,16 +1,15 @@
-from datetime import datetime, timezone, timedelta
-from typing import Union, Annotated
 import os
+from datetime import datetime, timezone, timedelta
+from typing import Union
 
 import jwt
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from fastapi.security import HTTPAuthorizationCredentials
 from fastapi import Depends
 from passlib.context import CryptContext
 
 from auth.app.models import User
-from auth.app.crud.user import get_user_by_email
+from auth.app.crud.user import get_user_by_email, get_user_by_login
 from auth.app.core.security.errors import (
     IncorrectUserDataException,
     InvalidAuthorizationTokenError,
@@ -33,8 +32,11 @@ def get_password_hash(password: str) -> str:
     return str(hashed_password)
 
 
-async def authenticate_user(email: str, password: str, session: AsyncSession) -> User:
-    user = await get_user_by_email(email, session)
+async def authenticate_user(login: str, password: str, session: AsyncSession) -> User:
+    if "@" in login:
+        user = await get_user_by_email(login, session)
+    else:
+        user = await get_user_by_login(login, session)
 
     if not user or not verify_password(password, user.password):
         raise IncorrectUserDataException()
@@ -55,10 +57,10 @@ def create_access_token(data: dict, expires_delta: Union[timedelta, None] = None
 async def check_jwt(token: str) -> dict:
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        email: str = payload.get("email")
+        login: str = payload.get("login")
         expire = datetime.fromtimestamp(int(payload.get("exp")), tz=timezone.utc)
-        if datetime.now(timezone.utc) > expire or email is None:
+        if datetime.now(timezone.utc) > expire or login is None:
             raise InvalidAuthorizationTokenError()
     except jwt.InvalidTokenError:
         raise InvalidAuthorizationTokenError()
-    return {"email": email}
+    return {"login": login}

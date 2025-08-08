@@ -1,13 +1,21 @@
+import os
 import asyncio
+from pathlib import Path
 
 import pytest
+from dotenv import load_dotenv
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 
-from .config import TEST_DB_URL
 from auth.app.models.base import Base as auth_base
 from auth.app.models import User
 from notes.app.models.base import Base as notes_base
+
+
+test_env = Path(__file__).parent / ".env"
+load_dotenv(test_env)
+
+TEST_DB_URL = os.getenv("ASYNC_DATABASE_URL")
 
 
 @pytest.fixture(scope="session")
@@ -20,7 +28,7 @@ def event_loop():
 
 @pytest.fixture
 async def auth_engine():
-    engine = create_async_engine(TEST_DB_URL, echo=True)
+    engine = create_async_engine(TEST_DB_URL, echo=False)
 
     async with engine.begin() as conn:
         await conn.execute(text("CREATE SCHEMA IF NOT EXISTS auth"))
@@ -33,7 +41,7 @@ async def auth_engine():
 
 @pytest.fixture
 async def notes_engine():
-    engine = create_async_engine(TEST_DB_URL, echo=True)
+    engine = create_async_engine(TEST_DB_URL, echo=False)
 
     async with engine.begin() as conn:
         await conn.execute(text("CREATE SCHEMA IF NOT EXISTS notes"))
@@ -60,6 +68,20 @@ async def notes_session(notes_engine):
         await session.rollback()
 
     await notes_engine.dispose()
+
+@pytest.fixture
+def create_auth_db(auth_session):
+    async def override_get_db():
+        yield auth_session
+    
+    from auth.app.main import app
+    from auth.app.core.db import get_db
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    yield
+
+    app.dependency_overrides.clear()
 
 
 @pytest.fixture
