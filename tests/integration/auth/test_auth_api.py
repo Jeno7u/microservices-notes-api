@@ -7,7 +7,7 @@ class TestAuthApi:
     """Testing auth api endpoints"""
 
     async def registrate_user(self, test_user_data1):
-        """Registrating user"""
+        """Function for registrating user"""
         register_data = test_user_data1.copy()
         register_data.pop("is_admin")
 
@@ -19,16 +19,42 @@ class TestAuthApi:
 
     async def test_registration(self, test_user_data1, create_auth_db):
         """Test registration of user"""
+        # correct registration
         response = await self.registrate_user(test_user_data1)
 
         assert response.status_code == 201
         assert "token" in response.json().keys()
+
+        # duplicate registration (changed email, same login)
+        data_same_by_login = test_user_data1.copy()
+        data_same_by_login["email"] = "alfred12@email.com"
+        response_same_login = await self.registrate_user(data_same_by_login)
+
+        assert response_same_login.status_code == 409
+
+        # duplicate registration (changed login, same email)
+        data_same_by_email = test_user_data1.copy()
+        data_same_by_email["login"] = "Alfred123"
+        response_same_email = await self.registrate_user(data_same_by_email)
+
+        assert response_same_email.status_code == 409
+
+        # registration with different login and email
+        data_changed_login_email = test_user_data1.copy()
+        data_changed_login_email["login"] = "Alfred123"
+        data_changed_login_email["email"] = "alfred12@email.com"
+        response_changed_login_email = await self.registrate_user(data_changed_login_email)
+
+        assert response_changed_login_email.status_code == 201
+        assert "token" in response_changed_login_email.json().keys()
     
 
     async def test_login(self, test_user_data1, create_auth_db):
         """Test login with valid data"""
+        # registrate user
         response_registration = await self.registrate_user(test_user_data1)
 
+        # test correct login
         login_data_by_login = {"login": test_user_data1["login"], "password": test_user_data1["password"]}
         login_data_by_email = {"login": test_user_data1["email"], "password": test_user_data1["password"]}
 
@@ -42,8 +68,18 @@ class TestAuthApi:
         assert "token" in response_by_email.json().keys()
         assert "token" in response_by_login.json().keys()
 
+        # test wrong password
+        login_data_wrong_password = {"login": test_user_data1["login"], "password": "wrongpassword"}
+
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            response_wrong_password = await client.post("/auth/login/", json=login_data_wrong_password)
+
+        assert response_wrong_password.status_code == 401
+
+
     async def test_token_validation(self, test_user_data1, create_auth_db):
         """Test of token validation endpoint"""
+        # correct token
         response_registration = await self.registrate_user(test_user_data1)
 
         data = response_registration.json()
@@ -52,3 +88,16 @@ class TestAuthApi:
 
         assert response_token_validation.status_code == 200
         assert "email" in response_token_validation.json().keys()
+
+        # bad token
+        data_expired_token = {"token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJlbWFpbCI6IkFsZXhIaXIyc2hAZW1haWwuY29tIiwiZXhwIjoxNzU0NTU1ODc1fQ.kHUwyPiMQBql-weDdZMsmz7inLfItv4LagE1s7cjnZY"}
+        data_wrong_token = {"token": "wrong.token.really"}
+
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+            response_expired_token = await client.post("/auth/validate-token/", json=data_expired_token)
+            response_wrong_token = await client.post("/auth/validate-token/", json=data_wrong_token)
+
+        assert response_expired_token.status_code == 401
+        assert response_wrong_token.status_code == 401
+
+        
