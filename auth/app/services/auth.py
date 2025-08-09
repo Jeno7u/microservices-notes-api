@@ -35,12 +35,10 @@ async def login_service(request_body: LoginRequest, session: AsyncSession) -> To
 async def register_service(request_body: RegisterRequest, session: AsyncSession) -> TokenBase:
     """Service function for registration"""
     try:
-        if "@" in request_body.login:
-            existing_user = await get_user_by_email(request_body.login, session)
-        else:
-            existing_user = await get_user_by_login(request_body.login, session)
+        existing_user_by_login = await get_user_by_login(request_body.login, session)
+        existing_user_by_email = await get_user_by_email(request_body.email, session)
 
-        if existing_user:
+        if existing_user_by_login or existing_user_by_email:
             raise HTTPException(status_code=409, detail="User with that email already exists")
         
         hashed_password = get_password_hash(request_body.password)
@@ -64,7 +62,7 @@ async def register_service(request_body: RegisterRequest, session: AsyncSession)
         raise
     except Exception as e:
         await session.rollback()
-        raise InternalServerError()
+        raise e
     finally:
         await session.close()
 
@@ -75,6 +73,7 @@ async def validate_token_service(token: str, session: AsyncSession) -> UserBase:
         token_data = await check_jwt(token)
         login = token_data.get("login")
         
+        # check is user is still exist
         if not login:
             raise InvalidAuthorizationTokenError()
         
