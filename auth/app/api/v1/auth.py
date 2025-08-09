@@ -38,6 +38,7 @@ async def register(request_body: RegisterRequest, session: AsyncSession = Depend
 
     return response
 
+# TODO: Delete user
 
 @router.post("/validate-token/",
              status_code=status.HTTP_200_OK,
