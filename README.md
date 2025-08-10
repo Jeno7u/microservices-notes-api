@@ -1,5 +1,5 @@
 # Microservice Notes REST API
-A simple microservice REST API for creating, storing and using notes. 
+A microservice RESTful API for creating, storing and using notes. 
 
 ---
 
@@ -99,7 +99,7 @@ Here you can explore all the available endpoints, see request/response schemas, 
 - FastAPI
 - SQLAlchemy
 - PostgreSQL
-- Pydantic
+- Pydantic v2
 
 **Authentication:**
 - JWT (JSON Web Tokens)
