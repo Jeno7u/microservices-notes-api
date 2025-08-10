@@ -1,4 +1,6 @@
-from pydantic import BaseModel
+import re
+from typing import Optional
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class LoginRequest(BaseModel):
@@ -16,12 +18,39 @@ class LoginRequest(BaseModel):
 
 
 class RegisterRequest(BaseModel):
-    login: str
-    name: str
-    surname: str
-    second_name: str = None
-    email: str
-    password: str
+    login: str = Field(..., min_length=3, max_length=25)
+    name: str = Field(..., min_length=1, max_length=50)
+    surname: str = Field(..., min_length=1, max_length=70)
+    second_name: Optional[str] = Field(None, min_length=1, max_length=40)
+    email: EmailStr = Field(...)
+    password: str = Field(..., min_length=8, max_length=128)
+
+    @field_validator("login")
+    def validate_login(cls, v: str):
+        """Login can only contain letters, numbers, and underscores"""
+        if not re.match(r"^[a-zA-Z0-9_]+$", v):
+            raise ValueError("Login can only contain letters, numbers, and underscores")
+        if v.lower() in ["admin", "root", "user", "test"]:
+            raise ValueError("This login is reserved")
+        return v.lower()
+    
+    @field_validator("name", "surname", "second_name")
+    def validate_name(cls, v: str):
+        """Name/Surname/Second name should contain only letters and dashes"""
+        if not re.match(r"^[a-zA-Z0-9-]+$", v):
+            raise ValueError("Name/Surname/Second name can only contain letters, numbers, and underscores")
+        if not re.match(r"--", v):
+            raise ValueError("Name/Surname/Second name cannot have multiple dashes in a row")
+        return v.capitalize()
+    
+    @field_validator("password")
+    def validate_password(cls, v : str):
+        """Password must contain at least one letter and one number"""
+        if not re.search(r"[A-Za-z]", v):
+            raise ValueError("Password must contain at least one letter")
+        if not re.search(r'\d', v):
+            raise ValueError("Password must contain at least one number")
+        return v
 
     model_config = {
         "json_schema_extra": {
