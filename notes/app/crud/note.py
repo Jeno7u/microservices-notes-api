@@ -3,7 +3,7 @@ from typing import Optional
 from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Note
+from notes.app.models import Note
 
 
 async def get_note_by_user_and_name(session: AsyncSession, user_id: str, name: str) -> Note:

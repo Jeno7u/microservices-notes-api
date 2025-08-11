@@ -1,26 +1,16 @@
 import httpx
 
+from tests.conftest import registrate_user
 from auth.app.main import app
 
 
 class TestAuthApi:
     """Testing auth api endpoints"""
 
-    async def registrate_user(self, test_user_data1):
-        """Function for registrating user"""
-        register_data = test_user_data1.copy()
-        register_data.pop("is_admin")
-
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
-            response = await client.post("/auth/register/", json=register_data)
-            
-        return response
-
-
     async def test_registration(self, test_user_data1, create_auth_db):
         """Test registration of user"""
         # correct registration
-        response = await self.registrate_user(test_user_data1)
+        response = await registrate_user(test_user_data1, app)
 
         assert response.status_code == 201
         assert "token" in response.json().keys()
@@ -28,14 +18,14 @@ class TestAuthApi:
         # duplicate registration (changed email, same login)
         data_same_by_login = test_user_data1.copy()
         data_same_by_login["email"] = "alfred12@email.com"
-        response_same_login = await self.registrate_user(data_same_by_login)
+        response_same_login = await registrate_user(data_same_by_login, app)
 
         assert response_same_login.status_code == 409
 
         # duplicate registration (changed login, same email)
         data_same_by_email = test_user_data1.copy()
         data_same_by_email["login"] = "Alfred123"
-        response_same_email = await self.registrate_user(data_same_by_email)
+        response_same_email = await registrate_user(data_same_by_email, app)
 
         assert response_same_email.status_code == 409
 
@@ -43,7 +33,7 @@ class TestAuthApi:
         data_changed_login_email = test_user_data1.copy()
         data_changed_login_email["login"] = "Alfred123"
         data_changed_login_email["email"] = "alfred12@email.com"
-        response_changed_login_email = await self.registrate_user(data_changed_login_email)
+        response_changed_login_email = await registrate_user(data_changed_login_email, app)
 
         assert response_changed_login_email.status_code == 201
         assert "token" in response_changed_login_email.json().keys()
@@ -52,7 +42,7 @@ class TestAuthApi:
     async def test_login(self, test_user_data1, create_auth_db):
         """Test login with valid data"""
         # registrate user
-        response_registration = await self.registrate_user(test_user_data1)
+        response_registration = await registrate_user(test_user_data1, app)
 
         # test correct login
         login_data_by_login = {"login": test_user_data1["login"], "password": test_user_data1["password"]}
@@ -80,7 +70,7 @@ class TestAuthApi:
     async def test_token_validation(self, test_user_data1, create_auth_db):
         """Test of token validation endpoint"""
         # correct token
-        response_registration = await self.registrate_user(test_user_data1)
+        response_registration = await registrate_user(test_user_data1, app)
 
         data = response_registration.json()
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:

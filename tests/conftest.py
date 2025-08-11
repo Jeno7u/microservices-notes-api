@@ -1,4 +1,5 @@
 import os
+import httpx
 import asyncio
 from pathlib import Path
 
@@ -15,7 +16,25 @@ from notes.app.models.base import Base as notes_base
 test_env = Path(__file__).parent / ".env"
 load_dotenv(test_env)
 
-TEST_DB_URL = os.getenv("ASYNC_DATABASE_URL")
+TEST_DB_USER = os.getenv("TEST_DB_USER")
+TEST_DB_PASSWORD = os.getenv("TEST_DB_PASSWORD")
+TEST_DB_HOST = os.getenv("TEST_DB_HOST")
+TEST_DB_PORT = os.getenv("TEST_DB_PORT")
+TEST_DB_NAME = os.getenv("TEST_DB_NAME")
+
+TEST_DB_URL = f"postgresql+asyncpg://{TEST_DB_USER}:{TEST_DB_PASSWORD}@{TEST_DB_HOST}:{TEST_DB_PORT}/{TEST_DB_NAME}"
+ECHO = bool(os.getenv("ECHO_TEST_DB"))
+
+
+async def registrate_user(test_user_data, app):
+    """Function for registrating user"""
+    register_data = test_user_data.copy()
+    register_data.pop("is_admin")
+
+    async with httpx.AsyncClient(transport=httpx.ASGITransport(app=app), base_url="http://test") as client:
+        response = await client.post("/auth/register/", json=register_data)
+        
+    return response
 
 
 @pytest.fixture(scope="session")
@@ -28,7 +47,7 @@ def event_loop():
 
 @pytest.fixture
 async def auth_engine():
-    engine = create_async_engine(TEST_DB_URL, echo=False)
+    engine = create_async_engine(TEST_DB_URL, echo=ECHO)
 
     async with engine.begin() as conn:
         await conn.execute(text("CREATE SCHEMA IF NOT EXISTS auth"))
@@ -41,7 +60,7 @@ async def auth_engine():
 
 @pytest.fixture
 async def notes_engine():
-    engine = create_async_engine(TEST_DB_URL, echo=False)
+    engine = create_async_engine(TEST_DB_URL, echo=ECHO)
 
     async with engine.begin() as conn:
         await conn.execute(text("CREATE SCHEMA IF NOT EXISTS notes"))
@@ -69,6 +88,7 @@ async def notes_session(notes_engine):
 
     await notes_engine.dispose()
 
+
 @pytest.fixture
 def create_auth_db(auth_session):
     async def override_get_db():
@@ -85,11 +105,26 @@ def create_auth_db(auth_session):
 
 
 @pytest.fixture
+def create_notes_db(notes_session):
+    async def override_get_db():
+        yield notes_session
+    
+    from notes.app.main import app
+    from notes.app.core.db import get_db
+
+    app.dependency_overrides[get_db] = override_get_db
+
+    yield
+
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
 def test_user_data1():
     user_data =  {
-        "login": "testuser1",
-        "name": "Test1",
-        "surname": "User1",
+        "login": "bormir123",
+        "name": "Boris",
+        "surname": "Mironov",
         "email": "test1@example.com",
         "password": "test1password123",
         "is_admin": False
@@ -100,14 +135,32 @@ def test_user_data1():
 @pytest.fixture
 def test_user_data2():
     user_data =  {
-        "login": "testuser2",
-        "name": "Test2",
-        "surname": "User2",
+        "login": "almay123",
+        "name": "Alfred",
+        "surname": "Mayers",
         "email": "test2@example.com",
         "password": "test2password123",
         "is_admin": True
     }
     return user_data
+
+
+@pytest.fixture
+def test_notes_data1():
+    notes_data =  {
+        "name": "TODO list",
+        "text": "I should do my homework today and take out garbage"
+    }
+    return notes_data
+
+
+@pytest.fixture
+def test_notes_data2():
+    notes_data =  {
+        "name": "Things that I like",
+        "text": "I love playing minecraft and terraria. Also I'm in love with ice cream."
+    }
+    return notes_data
 
 
 @pytest.fixture

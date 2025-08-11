@@ -3,11 +3,11 @@ from typing import Optional
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.schemas.notes import CreateNoteRequest, UpdateNoteRequest, NoteResponse, NoteTextResponse, NotesListResponse
-from app.core.security.utils import validate_token
-from app.core.security.errors import NoteAlreadyExistsError, NoteNotFound, UnauthorizedNoteAccessError, InternalServerError
-from app.crud.note import get_note_by_user_and_name, get_note_by_id, create_note, update_note_by_user, delete_note_by_id
-from app.models import Note
+from notes.app.schemas.notes import CreateNoteRequest, UpdateNoteRequest, NoteResponse, NoteTextResponse, NotesListResponse
+from notes.app.core.security.utils import validate_token
+from notes.app.core.security.errors import NoteAlreadyExistsError, NoteNotFound, UnauthorizedNoteAccessError, InternalServerError
+from notes.app.crud.note import get_note_by_user_and_name, get_note_by_id, create_note, update_note_by_user, delete_note_by_id
+from notes.app.models import Note
 
 
 async def check_note_with_same_name(session: AsyncSession, note_name: str, user_id: str) -> None:

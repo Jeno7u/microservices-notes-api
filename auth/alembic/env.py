@@ -2,7 +2,7 @@ import os
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config, text
-from sqlalchemy import pool, MetaData
+from sqlalchemy import pool
 
 from alembic import context
 
@@ -28,8 +28,13 @@ target_metadata = User.metadata
 # my_important_option = config.get_main_option("my_important_option")
 # ... etc.
 
+DB_USER = os.getenv("DB_USER")
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_HOST = os.getenv("DB_HOST")
+DB_PORT = os.getenv("DB_PORT")
+DB_NAME = os.getenv("DB_NAME")
 
-DB_URL = os.getenv("SYNC_DATABASE_URL")
+DB_URL = f"postgresql//{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.

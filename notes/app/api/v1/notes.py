@@ -2,10 +2,10 @@ from fastapi import APIRouter, Depends, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.core.db import get_db
-from app.services.notes import create_note_service, get_notes_service, update_note_service, get_note_service, delete_note_service
-from app.schemas.notes import CreateNoteRequest, NoteResponse, NotesListResponse, UpdateNoteRequest, NoteTextResponse
-from app.schemas.response import ErrorResponse
+from notes.app.core.db import get_db
+from notes.app.services.notes import create_note_service, get_notes_service, update_note_service, get_note_service, delete_note_service
+from notes.app.schemas.notes import CreateNoteRequest, NoteResponse, NotesListResponse, UpdateNoteRequest, NoteTextResponse
+from notes.app.schemas.response import ErrorResponse
 
 
 security = HTTPBearer()

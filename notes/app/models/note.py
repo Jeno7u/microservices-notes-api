@@ -1,8 +1,7 @@
 import uuid
-from typing import List
-from sqlalchemy import String, Boolean, Text, ForeignKey
+from sqlalchemy import String, Text
 from sqlalchemy.dialects.postgresql import UUID 
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column
 
 from .base import Base
 

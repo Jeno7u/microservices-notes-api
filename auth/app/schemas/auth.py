@@ -10,7 +10,7 @@ class LoginRequest(BaseModel):
     model_config = {
         "json_schema_extra": {
             "example": {
-                "email": "alexhirsh@email.com",
+                "login": "alexhirsh@email.com",
                 "password": "secret123"
             }
         }
@@ -37,9 +37,9 @@ class RegisterRequest(BaseModel):
     @field_validator("name", "surname", "second_name")
     def validate_name(cls, v: str):
         """Name/Surname/Second name should contain only letters and dashes"""
-        if not re.match(r"^[a-zA-Z0-9-]+$", v):
+        if not re.match(r"^[a-zA-Z-]+$", v):
             raise ValueError("Name/Surname/Second name can only contain letters, numbers, and underscores")
-        if not re.match(r"--", v):
+        if re.match(r"--", v):
             raise ValueError("Name/Surname/Second name cannot have multiple dashes in a row")
         return v.capitalize()
     

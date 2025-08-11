@@ -2,7 +2,7 @@ import httpx
 
 from fastapi import Depends
 
-from app.core.security.errors import InvalidAuthorizationTokenError
+from notes.app.core.security.errors import InvalidAuthorizationTokenError
 
 
 async def validate_token(token) -> dict:
