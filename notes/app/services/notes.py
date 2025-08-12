@@ -1,5 +1,3 @@
-from typing import Optional
-
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -57,7 +55,7 @@ async def create_note_service(
         note_name = new_note.name
 
         await session.commit()
-        
+
         return {
                 "id": note_id,
                 "name": note_name
