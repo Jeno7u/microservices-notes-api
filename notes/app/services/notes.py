@@ -51,10 +51,16 @@ async def create_note_service(
 
     try:
         new_note = await create_note(session, response_validation["user_id"], request_body.name)
+        await session.flush()
+        
+        note_id = str(new_note.id)
+        note_name = new_note.name
+
         await session.commit()
+        
         return {
-                "id": str(new_note.id),
-                "name": new_note.name
+                "id": note_id,
+                "name": note_name
         }
     
     except Exception as e:

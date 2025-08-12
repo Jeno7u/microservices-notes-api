@@ -1,15 +1,11 @@
 import httpx
 
-from fastapi import Depends
-
 from notes.app.core.security.errors import InvalidAuthorizationTokenError
 
 
 async def validate_token(token) -> dict:
-    """
-    Проверка jwt-токена в auth микросервисе
-    В случае успеха возвращает {"email": email}
-    """
+    """Checks token by sending request to auth microservice"""
+
     async with httpx.AsyncClient() as client:
         response = await client.post("http://auth:8000/auth/validate-token/", json={"token": token})
 
