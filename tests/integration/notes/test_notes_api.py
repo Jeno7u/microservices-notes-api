@@ -80,7 +80,37 @@ class TestNotesApi:
             async with httpx.AsyncClient(transport=httpx.ASGITransport(app=notes_app), base_url="http://test") as client:
                 response = await client.get("/notes/", headers=headers)
 
-            return response
-
         assert response.status_code == 200
+        assert len(response.json()["notes"]) == 2
+
+    
+    async def test_change_note(self, test_user_data1, test_note_data1, create_auth_db, create_notes_db):
+        # create user
+        response_registration = await registrate_user(test_user_data1, auth_app)
+        token = response_registration.json()["token"]
+
+        # create note
+        response_create_note = await self.create_note(token, test_note_data1)
+        note_id = response_create_note.json()["id"]
+
+        data_to_change = {
+            "name": "New name",
+        }
+
+        # get validate token response for mock
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=auth_app), base_url="http://test") as client:
+            response_validate_token = await client.post("/auth/validate-token/", json={"token": token})
+        mock_response = response_validate_token.json()
+
+        # get list of notes that belongs to user
+        with patch("notes.app.services.notes.validate_token") as mock_validate:
+            mock_validate.return_value = mock_response
+
+            headers = {"Authorization": f"Bearer {token}"}
+            async with httpx.AsyncClient(transport=httpx.ASGITransport(app=notes_app), base_url="http://test") as client:
+                response = await client.put(f"/notes/{note_id}/", headers=headers, json=data_to_change)
+            
+        assert response.status_code == 200
+        assert response.json()["name"] == data_to_change["name"]
+
 
