@@ -19,11 +19,11 @@ async def check_note_with_same_name(session: AsyncSession, note_name: str, user_
 
 async def check_note_existence(session: AsyncSession, note_id: str) -> Note:
     """Проверка наличии заметки с ID == note_id"""
-    note = await get_note_by_id(session, note_id)
-    if not note:
+    try:
+        note = await get_note_by_id(session, note_id)
+        return note
+    except Exception:
         raise NoteNotFound(note_id)
-    return note
-    
 
 async def check_note_belongs_to_user(note_user_id: str, token_user_id: str) -> None:
     """Проверка принадлежности заметки пользователю"""
@@ -102,8 +102,8 @@ async def update_note_service(
 
         note = await validate_note_access(session, note_id, response_validation["user_id"])
         
-        # проверка на дубликат имени (если изменяется)
-        if request_body.name and request_body.name != note.name:
+        # проверка на дубликат имени
+        if request_body.name:
             await check_note_with_same_name(session, request_body.name, response_validation["user_id"])
         
         # нет изменений
