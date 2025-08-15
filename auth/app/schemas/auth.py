@@ -65,6 +65,11 @@ class RegisterRequest(BaseModel):
     }
 
 
+class AuthorizationResponse(BaseModel):
+    token: str
+    user_id: str
+
+
 class TokenBase(BaseModel):
     token: str
 

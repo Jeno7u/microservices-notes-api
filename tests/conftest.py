@@ -13,7 +13,8 @@ from auth.app.models import User
 from notes.app.models.base import Base as notes_base
 
 
-test_env = Path(__file__).parent / ".env"
+test_env = Path(__file__).parent.parent / ".env"
+print(test_env)
 load_dotenv(test_env)
 
 TEST_DB_USER = os.getenv("TEST_DB_USER")
@@ -23,6 +24,7 @@ TEST_DB_PORT = os.getenv("TEST_DB_PORT")
 TEST_DB_NAME = os.getenv("TEST_DB_NAME")
 
 TEST_DB_URL = f"postgresql+asyncpg://{TEST_DB_USER}:{TEST_DB_PASSWORD}@{TEST_DB_HOST}:{TEST_DB_PORT}/{TEST_DB_NAME}"
+print(TEST_DB_URL)
 ECHO = bool(os.getenv("ECHO_TEST_DB"))
 
 
@@ -146,7 +148,7 @@ def test_user_data2():
 
 
 @pytest.fixture
-def test_notes_data1():
+def test_note_data1():
     notes_data =  {
         "name": "TODO list",
         "text": "I should do my homework today and take out garbage"
@@ -155,7 +157,7 @@ def test_notes_data1():
 
 
 @pytest.fixture
-def test_notes_data2():
+def test_note_data2():
     notes_data =  {
         "name": "Things that I like",
         "text": "I love playing minecraft and terraria. Also I'm in love with ice cream."

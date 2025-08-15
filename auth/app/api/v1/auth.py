@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from auth.app.core.db import get_db
 from auth.app.services.auth import login_service, register_service, validate_token_service
-from auth.app.schemas.auth import LoginRequest, RegisterRequest, TokenBase, UserBase
+from auth.app.schemas.auth import LoginRequest, RegisterRequest, TokenBase, UserBase, AuthorizationResponse
 from auth.app.schemas.response import ErrorResponse
 
 
@@ -11,7 +11,7 @@ router = APIRouter()
 
 @router.post("/login/",
              status_code=status.HTTP_200_OK,
-             response_model=TokenBase,
+             response_model=AuthorizationResponse,
              responses={
                  401: {"model": ErrorResponse, "description": "Incorrect email or password"},
                  422: {"model": ErrorResponse, "description": "Validation error"},
@@ -26,7 +26,7 @@ async def login(request_body: LoginRequest, session: AsyncSession = Depends(get_
 
 @router.post("/register/",
              status_code=status.HTTP_201_CREATED,
-             response_model=TokenBase,
+             response_model=AuthorizationResponse,
              responses={
                  409: {"model": ErrorResponse, "description": "User with that email already exists"},
                  422: {"model": ErrorResponse, "description": "Validation error"},
