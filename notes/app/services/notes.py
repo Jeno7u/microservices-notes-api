@@ -34,6 +34,8 @@ async def check_note_belongs_to_user(note_user_id: str, token_user_id: str) -> N
 async def validate_note_access(session: AsyncSession, note_id: str, user_id: str) -> Note:
     """Проверка наличии заметки с ID == note_id и проверкой принадлежности данной заметки пользователю"""
     note = await check_note_existence(session, note_id)
+    if note is None:
+        raise NoteNotFound(note_id)
     await check_note_belongs_to_user(str(note.user_id), user_id)
     return note
     
