@@ -9,6 +9,12 @@ from notes.app.main import app as notes_app
 class TestNotesApi:
     "Testing notes api endpoints"
 
+    async def response_validate_token(self, token):
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=auth_app), base_url="http://test") as client:
+            response_validate_token = await client.post("/auth/validate-token/", json={"token": token})
+        return response_validate_token.json()
+
+
     async def create_note(self, token, test_note_data):
         # validate token with auth service to get user_id
         async with httpx.AsyncClient(transport=httpx.ASGITransport(app=auth_app), base_url="http://test") as client:
@@ -27,6 +33,7 @@ class TestNotesApi:
                 response_create_note = await client.post("/notes/create/", json=test_note_data, headers=headers)
 
             return response_create_note
+        
 
 
     async def test_create_notes(self, test_user_data1, test_note_data1, test_note_data2, create_auth_db, create_notes_db):
@@ -67,12 +74,8 @@ class TestNotesApi:
         await self.create_note(token, test_note_data1)
         await self.create_note(token, test_note_data2)
 
-        # get validate token response for mock
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=auth_app), base_url="http://test") as client:
-            response_validate_token = await client.post("/auth/validate-token/", json={"token": token})
-        mock_response = response_validate_token.json()
-
         # get list of notes that belongs to user
+        mock_response = await self.response_validate_token(token)
         with patch("notes.app.services.notes.validate_token") as mock_validate:
             mock_validate.return_value = mock_response
 
@@ -98,12 +101,8 @@ class TestNotesApi:
             "name": "New name",
         }
 
-        # get validate token response for mock
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=auth_app), base_url="http://test") as client:
-            response_validate_token = await client.post("/auth/validate-token/", json={"token": token})
-        mock_response = response_validate_token.json()
-
         # send a request to change note name
+        mock_response = await self.response_validate_token(token)
         with patch("notes.app.services.notes.validate_token") as mock_validate:
             mock_validate.return_value = mock_response
 
@@ -147,12 +146,8 @@ class TestNotesApi:
         response_create_note = await self.create_note(token, test_note_data1)
         note_id = response_create_note.json()["id"]
 
-        # get validate token response for mock
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=auth_app), base_url="http://test") as client:
-            response_validate_token = await client.post("/auth/validate-token/", json={"token": token})
-        mock_response = response_validate_token.json()
-
         # get note by id
+        mock_response = await self.response_validate_token(token)
         with patch("notes.app.services.notes.validate_token") as mock_validate:
             mock_validate.return_value = mock_response
 
@@ -184,12 +179,8 @@ class TestNotesApi:
         response_create_note = await self.create_note(token, test_note_data1)
         note_id = response_create_note.json()["id"]
 
-        # get validate token response for mock
-        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=auth_app), base_url="http://test") as client:
-            response_validate_token = await client.post("/auth/validate-token/", json={"token": token})
-        mock_response = response_validate_token.json()
-
         # delete note by id
+        mock_response = await self.response_validate_token(token)
         with patch("notes.app.services.notes.validate_token") as mock_validate:
             mock_validate.return_value = mock_response
 
@@ -209,7 +200,4 @@ class TestNotesApi:
 
         assert response_get_note.status_code == 404
         
-
-
-
 
