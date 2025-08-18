@@ -1,12 +1,16 @@
 from notes.app.models import Note
 from notes.app.crud.note import (
     get_note_by_user_and_name,
-    get_note_by_id
+    get_note_by_id,
+    generate_unique_name
     )
+
+
+USER_ID = "d3c3a3e7-9613-452a-9d9f-31d2cfb0db96" # random uuid
 
 class TestCrudFunctions:
     """Test crud functions"""
-    async def create_note(self, test_note_data, notes_session, user_id="d3c3a3e7-9613-452a-9d9f-31d2cfb0db96"): # random base uuid
+    async def create_note(self, test_note_data, notes_session, user_id=USER_ID):
         note = Note(
             name=test_note_data["name"], 
             text=test_note_data["text"],
@@ -17,17 +21,17 @@ class TestCrudFunctions:
 
     async def test_get_note_by_user_and_name(self, test_note_data1, notes_session):
         # create note
-        note = await self.create(test_note_data1, notes_session)
+        note = await self.create_note(test_note_data1, notes_session, USER_ID)
         await notes_session.flush()
 
         # get note by user and name
-        note_by_user_and_name = await get_note_by_user_and_name(notes_session, user_id, test_note_data1["name"])
+        note_by_user_and_name = await get_note_by_user_and_name(notes_session, USER_ID, test_note_data1["name"])
         assert note_by_user_and_name == note
 
     
     async def test_get_note_by_id(self, test_note_data1, notes_session):
         # create note
-        note = await self.create(test_note_data1, notes_session)
+        note = await self.create_note(test_note_data1, notes_session)
         await notes_session.flush()
 
         # get note by id
@@ -35,17 +39,20 @@ class TestCrudFunctions:
         assert note_by_id == note
 
 
-    # async def test_generate_unique_name(self, test_note_data1, notes_session):
+    async def test_generate_unique_name(self, test_note_data1, test_note_data2, notes_session):
+        base_name = "New Note"
+        # create notes with normal name
+        note_normal_name1 = await self.create_note(test_note_data1, notes_session, USER_ID)
+        note_normal_name2 = await self.create_note(test_note_data2, notes_session, USER_ID)
+        await notes_session.flush()
 
+        # get generated unique name
+        new_name = await generate_unique_name(notes_session, USER_ID, base_name)
+        assert new_name == "New Note 1"
 
+        # create notes with base name
+        note_base_name1 = await self.create_note({"name": "New Note 1", "text": None}, notes_session, USER_ID)
+        note_base_name2 = await self.create_note({"name": "New Note 2", "text": None}, notes_session, USER_ID)
 
-    # async def test_crud_get_user_by_email(self, test_user1, auth_session):
-    #     # create user
-    #     auth_session.add(test_user1)
-    #     await auth_session.flush()
-
-    #     # user by email
-    #     user_by_email = await get_user_by_email(test_user1.email, auth_session)
-    #     assert user_by_email == test_user1
-
-    
+        new_name = await generate_unique_name(notes_session, USER_ID, base_name)
+        assert new_name == "New Note 3"
