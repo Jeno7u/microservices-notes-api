@@ -20,10 +20,12 @@ WORKDIR /workspace/auth
 RUN poetry config virtualenvs.create false \
   && poetry install --no-root --only main
 
-WORKDIR /workspace
+ENV PYTHONPATH="/workspace"
 
 COPY auth /workspace/auth
 
-ENV PYTHONPATH="/workspace"
+COPY auth/entrypoint.sh /workspace/auth/entrypoint.sh
 
-CMD ["uvicorn", "auth.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+RUN chmod +x /workspace/auth/entrypoint.sh
+
+ENTRYPOINT ["/workspace/auth/entrypoint.sh"]

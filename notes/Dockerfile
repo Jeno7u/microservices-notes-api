@@ -20,10 +20,12 @@ WORKDIR /workspace/notes
 RUN poetry config virtualenvs.create false \
   && poetry install --no-root --only main
 
-WORKDIR /workspace
+ENV PYTHONPATH="/workspace"
 
 COPY notes /workspace/notes
 
-ENV PYTHONPATH="/workspace"
+COPY notes/entrypoint.sh /workspace/notes/entrypoint.sh
 
-CMD ["uvicorn", "notes.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+RUN chmod +x /workspace/notes/entrypoint.sh
+
+ENTRYPOINT ["/workspace/notes/entrypoint.sh"]

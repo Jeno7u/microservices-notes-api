@@ -36,6 +36,10 @@ class RegisterRequest(BaseModel):
     
     @field_validator("name", "surname", "second_name")
     def validate_name(cls, v: str):
+        # if v == second_name
+        if v == None:
+            return v
+        
         """Name/Surname/Second name should contain only letters and dashes"""
         if not re.match(r"^[a-zA-Z-]+$", v):
             raise ValueError("Name/Surname/Second name can only contain letters, numbers, and underscores")

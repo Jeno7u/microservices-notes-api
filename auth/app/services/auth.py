@@ -40,7 +40,7 @@ async def register_service(request_body: RegisterRequest, session: AsyncSession)
     try:
         existing_user_by_login = await get_user_by_login(request_body.login, session)
         existing_user_by_email = await get_user_by_email(request_body.email, session)
-
+        print(existing_user_by_email, existing_user_by_login)
         if existing_user_by_login or existing_user_by_email:
             raise HTTPException(status_code=409, detail="User with that email already exists")
         
