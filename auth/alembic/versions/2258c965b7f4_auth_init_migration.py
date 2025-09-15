@@ -38,3 +38,5 @@ def upgrade() -> None:
     # ### end Alembic commands ###
 
 
+def downgrade() -> None:
+    pass
