@@ -1,66 +1,105 @@
 services:
-  auth:
-    build:
-      context: .
-      dockerfile: auth/Dockerfile
-    container_name: auth
-    ports:
-      - "8001:8000"
-    env_file:
-      - .env
-    depends_on:
-      - db
-    volumes:
-      - ./auth:/app
+    auth:
+        build:
+            context: .
+            dockerfile: auth/Dockerfile
+        container_name: auth
+        ports:
+            - "8001:8000"
+        env_file:
+            - .env
+        depends_on:
+            - db
+        volumes:
+            - ./auth:/app
 
-  notes:
-    build:
-      context: .
-      dockerfile: notes/Dockerfile
-    container_name: notes
-    ports:
-      - "8002:8000"
-    env_file:
-      - .env
-    volumes:
-      - ./notes:/app
+    notes:
+        build:
+            context: .
+            dockerfile: notes/Dockerfile
+        container_name: notes
+        ports:
+            - "8002:8000"
+        env_file:
+            - .env
+        volumes:
+            - ./notes:/app
 
-  gateway:
-    build:
-      context: ./gateway
-    container_name: gateway
-    ports:
-      - "8000:8000"
-    depends_on:
-      - auth
-      - notes
-    volumes:
-      - ./gateway:/app
+    gateway:
+        build:
+            context: ./gateway
+        container_name: gateway
+        ports:
+            - "8000:8000"
+        depends_on:
+            - auth
+            - notes
+        volumes:
+            - ./gateway:/app
 
-  db:
-    image: postgres:15
-    container_name: postgres_db
-    restart: always
-    environment:
-      POSTGRES_DB: ${DB_NAME}
-      POSTGRES_USER: ${DB_USER}
-      POSTGRES_PASSWORD: ${DB_PASSWORD}
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+    db:
+        image: postgres:15
+        container_name: postgres_db
+        restart: always
+        environment:
+            POSTGRES_DB: ${DB_NAME}
+            POSTGRES_USER: ${DB_USER}
+            POSTGRES_PASSWORD: ${DB_PASSWORD}
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        ports:
+            - "5432:5432"
 
-  test-db:
-    image: postgres:15
-    container_name: postgres_test
-    environment:
-      POSTGRES_DB: ${TEST_DB_NAME}
-      POSTGRES_USER: ${TEST_DB_USER}
-      POSTGRES_PASSWORD: ${TEST_DB_PASSWORD}
-    tmpfs:
-      - /var/lib/postgresql/data
-    ports:
-      - "5433:5432"
+    test-db:
+        profiles: ["test"]
+        image: postgres:15
+        container_name: postgres_test
+        environment:
+            POSTGRES_DB: ${TEST_DB_NAME}
+            POSTGRES_USER: ${TEST_DB_USER}
+            POSTGRES_PASSWORD: ${TEST_DB_PASSWORD}
+        tmpfs:
+            - /var/lib/postgresql/data
+        ports:
+            - "5433:5432"
+
+    promtail:
+        image: grafana/promtail:latest
+        container_name: promtail
+        ports:
+            - "9080:9080"
+        volumes:
+            - /var/lib/docker/containers:/var/lib/docker/containers:ro
+            - /var/run/docker.sock:/var/run/docker.sock
+            - ./promtail-config.yaml:/etc/promtail/config.yml
+        command: -config.file=/etc/promtail/config.yml
+        privileged: true
+
+    loki:
+        image: grafana/loki:latest
+        container_name: loki
+        ports:
+            - "3100:3100"
+        volumes:
+            - ./loki-config.yaml:/etc/loki/local-config.yaml
+    prometheus:
+        image: prom/prometheus:latest
+        container_name: prometheus
+        ports:
+            - "9090:9090"
+        volumes:
+            - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+
+    grafana:
+        image: grafana/grafana:latest
+        container_name: grafana
+        ports:
+            - "3000:3000"
+        environment:
+            - GF_SECURITY_ADMIN_USER=admin
+            - GF_SECURITY_ADMIN_PASSWORD=admin
+        volumes:
+            - ./grafana/datasources.yaml:/etc/grafana/provisioning/datasources/datasources.yaml
 
 volumes:
-  postgres_data:
+    postgres_data:
